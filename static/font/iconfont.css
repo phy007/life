@@ -1,0 +1,29 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 3259534 */
+  src:url('/static/font/iconfont.ttf?t=1647654737348') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-leidatu:before {
+  content: "\e61a";
+}
+
+.icon-bingtu:before {
+  content: "\e615";
+}
+
+.icon-tubiao-zhuzhuangtu:before {
+  content: "\e6db";
+}
+
+.icon-zhexiantu_o:before {
+  content: "\ebb3";
+}
+

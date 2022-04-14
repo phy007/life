@@ -1,0 +1,131 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      // uni-ui 规则如下配置
+      "^uni-(.*)": "./uni_modules/uni-$1/uni-$1.vue"
+    }
+  },
+  "globalStyle": {
+    "navigationBarBackgroundColor": "#7950EA",
+    "navigationBarTextStyle": "white"
+  },
+  "pages": [
+    {
+      "path": "pages/moment/moment",
+      "style": {
+        "navigationBarTitleText": "Our Moment"
+      }
+    },
+    {
+      "path": "pages/bill/bill",
+      "style": {
+        "navigationBarTitleText": "Bill List"
+      }
+    },
+    {
+      "path": "pages/person/person",
+      "style": {
+        "navigationBarTitleText": "About Me"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "Login"
+      }
+    },
+    {
+      "path": "pages/enroll/enroll"
+    },
+    {
+      "path": "pages/classify/classify",
+      "style": {
+        "navigationBarTitleText": "Add Icon"
+      }
+    },
+    {
+      "path": "pages/addBill/addBill",
+      "style": {
+        "navigationBarTitleText": "Bill Detail"
+      }
+    },
+    {
+      "path": "pages/chart/chart",
+      "style": {
+        "navigationBarTitleText": "Chart Detail"
+      }
+    },
+    {
+      "path": "pages/shiftBill/shiftBill",
+      "style": {
+        "navigationBarTitleText": "Shift BillType"
+      }
+    },
+    {
+      "path": "pages/setPage/setPage",
+      "style": {
+        "navigationBarTitleText": "Setting"
+      }
+    },
+    {
+      "path": "pages/accountDetail/accountDetail",
+      "style": {
+        "navigationBarTitleText": "Account Detail"
+      }
+    },
+    {
+      "path": "pages/favorites/favorites",
+      "style": {
+        "navigationBarTitleText": "My Favotites"
+      }
+    },
+    {
+      "path": "pages/message/message",
+      "style": {
+        "navigationBarTitleText": "Message"
+      }
+    },
+    {
+      "path": "pages/recordDetail/recordDetail",
+      "style": {
+        "navigationBarTitleText": "Record Detail"
+      }
+    }
+  ],
+  "tabBar": {
+    "selectedColor": "#7950EA",
+    "backgroundColor": "#ffffff",
+    "iconWidth": "18px",
+    "list": [
+      {
+        "pagePath": "pages/moment/moment",
+        "text": "动态",
+        "iconPath": "static/img/moment.png",
+        "selectedIconPath": "static/img/c-moment.png"
+      },
+      {
+        "pagePath": "pages/bill/bill",
+        "text": "账单",
+        "iconPath": "static/img/bill.png",
+        "selectedIconPath": "static/img/c-bill.png"
+      },
+      {
+        "pagePath": "pages/person/person",
+        "text": "我的",
+        "iconPath": "static/img/me.png",
+        "selectedIconPath": "static/img/c-me.png"
+      }
+    ]
+  },
+  "condition": { //模式配置，仅开发期间生效
+    "current": 0, //当前激活的模式(list 的索引项)
+    "list": [
+      {
+        "name": "", //模式名称
+        "path": "/pages/login/login", //启动页面，必选
+        "query": "" //启动参数，在页面的onLoad函数里面得到
+      }
+    ]
+  }
+}
