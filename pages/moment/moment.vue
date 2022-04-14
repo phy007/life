@@ -131,11 +131,9 @@
               mode="widthFix"
             ></image>
           </view>
-          <text
-            @click="jumpNextPage(f, 'other')"
-            class="uni-body"
-            >{{ f.recordText }}</text
-          >
+          <text @click="jumpNextPage(f, 'other')" class="uni-body">{{
+            f.recordText
+          }}</text>
           <view slot="actions" class="card-actions">
             <view class="card-actions-item" @click="addComment(f)">
               <uni-icons type="chatbubble" size="20" color="#999"></uni-icons>
@@ -160,10 +158,10 @@
           </view>
 
           <!-- 评论区 -->
-          <view v-if="commentList[i].length" class="m-commentBox">
+          <view v-if="commentandreplyList[i].length" class="m-commentBox">
             <view
               class="m-comItem"
-              v-for="(c, cindex) in commentList[i]"
+              v-for="(c, cindex) in commentandreplyList[i]"
               :key="cindex"
             >
               <view>
@@ -175,8 +173,8 @@
                   color="#999"
                   @click="handleReply(c, c.commentId)"
                 ></uni-icons>
-                <template v-if="replyList[i].length">
-                  <view v-for="(r, rindex) in replyList[i]" :key="rindex">
+                <template v-if="c.replys">
+                  <view v-for="(r, rindex) in c.replys" :key="rindex">
                     <text class="m-comName"
                       >{{ r.userName }}回复{{ r.repliedUserName }}：</text
                     >
@@ -250,8 +248,7 @@ export default {
       ownUserName: '',
       ownList: [],
       firList: [],
-      commentList: [],
-      replyList: [],
+      commentandreplyList: [],
       showEditBox: false,
       showEditInfo: {},
       showEditTitle: '',
@@ -322,8 +319,8 @@ export default {
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.firList = v.data.friRecord
-          _this.commentList = v.data.comments
-          _this.replyList = v.data.replys
+          _this.commentandreplyList = v.data.commentsAndReplys
+          console.log(v.data.commentsAndReplys)
         }
       })
     },
@@ -525,7 +522,8 @@ export default {
       this.recordId = f.recordId
     },
     cancelInput() {
-      commonWays.toast('取消评论')
+      let message = this.showPopChannel ? '取消评论' : '取消回复'
+      commonWays.toast(message)
       this.showPop = false
       this.showPopText = ''
     },
@@ -665,6 +663,7 @@ export default {
       if (this.current != e.currentIndex) {
         this.current = e.currentIndex
       }
+      this.showEditBox = false
     },
     shareRecord(record) {},
     triggerFab(e) {
@@ -691,7 +690,7 @@ export default {
       }
     },
     jumpNextPage(record, type) {
-      commonWays.jumpToRecordDetail(record, type)
+      commonWays.jumpToRecordDetail(record.recordId, type)
     },
   },
 }
@@ -832,32 +831,6 @@ export default {
       padding: 15px;
       box-sizing: border-box;
       height: auto;
-      .b-popTitle {
-        display: block;
-        letter-spacing: 1px;
-        height: 26px;
-      }
-      .b-popArea {
-        position: relative;
-        textarea {
-          box-sizing: border-box;
-          padding: 10px;
-          background-color: #f9f7f7;
-          width: 100%;
-          text-align: left;
-          margin: 12px 0;
-        }
-        .b-popRight {
-          position: absolute;
-          bottom: 0;
-          right: 10px;
-          display: block;
-          text-align: right;
-          font-size: 16px;
-          font-weight: normal;
-        }
-      }
-
       button {
         width: 70px;
         height: 35px;

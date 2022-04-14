@@ -15,15 +15,9 @@ export const commonWays = {
     let d = new Date()
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
   },
-  jumpToRecordDetail: (record, type) => {
+  jumpToRecordDetail: (id, type) => {
     uni.navigateTo({
-      url: '/pages/recordDetail/recordDetail',
-      success: function (res) {
-        res.eventChannel.emit('toRecordDetailPageData', {
-          record,
-          type,
-        })
-      },
+      url: `/pages/recordDetail/recordDetail?id=${id}&type=${type}`,
     })
   },
 }

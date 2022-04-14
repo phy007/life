@@ -22,7 +22,7 @@
         interval="4000"
         duration="1000"
       >
-        <swiper-item v-for="(img, i) in record.recordImage.split('&')">
+        <swiper-item v-for="(img, i) in record.recordImage.split('&')" :key="i">
           <view>
             <image :src="`${baseUrl}${img}`"></image>
           </view>
@@ -55,7 +55,7 @@
       </template>
 
       <template v-else>
-        <view>
+        <view @click="selectLike(1)">
           <uni-icons
             :type="favorite === '1' ? 'hand-up-filled' : 'hand-up'"
             size="24"
@@ -63,13 +63,17 @@
           ></uni-icons>
           <text>点赞</text>
         </view>
-        <view>
+        <view @click="selectLike(2)">
           <uni-icons
             :type="collect === '1' ? 'star-filled' : 'star'"
             size="24"
             color="#999"
           ></uni-icons>
           <text>收藏</text>
+        </view>
+        <view @click="addComment">
+          <uni-icons type="chatbubble" size="24" color="#999"></uni-icons>
+          <text>评论</text>
         </view>
       </template>
 
@@ -125,6 +129,33 @@
     </view>
 
     <!-- 回复pop组件化 -->
+    <!-- 弹出层 -->
+    <view class="bt-pop" v-if="showPop">
+      <view class="b-popMain">
+        <text class="b-popTitle">{{ ownUserName }}</text>
+        <text class="b-popTitle" style="font-size: 16px">{{
+          showPopChannel ? '评论' : '回复'
+        }}</text>
+        <view class="b-popArea">
+          <textarea
+            v-model="showPopText"
+            auto-focus
+            maxlength="50"
+            @input="textareaInput($event, 50)"
+          >
+          </textarea>
+          <text
+            class="b-popRight"
+            :class="inputTextLength === 50 ? 'errorNum' : ''"
+            >{{ inputTextLength }}/50</text
+          >
+        </view>
+        <button class="com-button com-btn-red" @click="sureInput">确定</button>
+        <button class="com-button com-btn-green" @click="cancelInput">
+          取消
+        </button>
+      </view>
+    </view>
     <!-- handleReply函数 -->
   </view>
 </template>
@@ -132,7 +163,7 @@
 <script>
 import { request, BASE_URL } from '../../utils/request'
 import { get_userName } from '../../utils/storage'
-
+import { commonWays } from '../../utils/common'
 export default {
   data() {
     return {
@@ -148,32 +179,41 @@ export default {
       collectCount: 0,
       favoriteCount: 0,
       likeId: 0,
+      showPop: false,
+      showPopText: '',
+      inputTextLength: 0,
     }
   },
-  onLoad() {
-    const _this = this
-    // #ifdef APP-NVUE
-    const eventChannel = _this.$scope.eventChannel
-    // #endif
-    const eventChannel = _this.getOpenerEventChannel()
-    eventChannel.once('toRecordDetailPageData', function (data) {
-      _this.record = data.record
-      _this.type = data.type
-    })
-    _this.ownUserName = get_userName()
-    if (_this.record) {
-      _this.getUserImg(_this.record.userId)
-      _this.getCommentData(_this.record.recordId)
-    }
-    if (_this.type === 'own') {
-      _this.getColAndFavCount(_this.type.recordId)
-    } else {
-      _this.favorite = _this.record.favorite
-      _this.collect = _this.record.collect
-      _this.likeId = _this.record.likeId
-    }
+  onLoad(e) {
+    this.recordId = e.id
+    this.type = e.type
+    this.ownUserName = get_userName()
+    this.getRecord(e.id)
+    this.getUserImg(this.record.userId)
+    this.getCommentData(e.id)
   },
   methods: {
+    getRecord(id) {
+      const _this = this
+      request({
+        url: '/getRecord',
+        data: {
+          recordId: id,
+          type: _this.type,
+        },
+      }).then((v) => {
+        if (v.statusCode === 200) {
+          _this.record = v.data
+          if (_this.type === 'own') {
+            _this.getColAndFavCount(v.data.recordId)
+          } else {
+            _this.favorite = v.data.favorite
+            _this.collect = v.data.collect
+            _this.likeId = v.data.likeId
+          }
+        }
+      })
+    },
     getUserImg(id) {
       const _this = this
       request({
@@ -192,7 +232,6 @@ export default {
         },
       }).then((v) => {
         if (v.statusCode === 200) {
-          console.log(v.data)
           _this.commentList = v.data.comments
           _this.replyList = v.data.replys
         }
@@ -212,12 +251,166 @@ export default {
         }
       })
     },
-    handleReply(record, id) {},
+    addComment() {
+      this.showPop = true
+      this.inputTextLength = 0
+      this.showPopChannel = true
+    },
+    cancelInput() {
+      let message = this.showPopChannel ? '取消评论' : '取消回复'
+      commonWays.toast(message)
+      this.showPop = false
+      this.showPopText = ''
+    },
+    sureInput() {
+      const _this = this
+      if (this.showPopChannel) {
+        request({
+          url: '/addComment',
+          method: 'POST',
+          data: {
+            date: commonWays.currentDate(),
+            content: _this.showPopText,
+            recordId: _this.record.recordId,
+            commentUserId: getApp().globalData.$userId || get_userId(),
+            userName: _this.ownUserName,
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) {
+            commonWays.toast('评论成功')
+          }
+        })
+      } else {
+        request({
+          url: '/addReply',
+          method: 'POST',
+          data: {
+            commentId: _this.replyCommentId,
+            replyContent: _this.showPopText,
+            replyDate: commonWays.currentDate(),
+            userName: _this.ownUserName,
+            userId: getApp().globalData.$userId || get_userId(),
+            repliedUserName: _this.repliedUserName,
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) {
+            commonWays.toast('回复成功')
+          }
+        })
+      }
+      _this.showPop = false
+      _this.showPopText = ''
+      _this.getCommentData(_this.recordId)
+    },
+    handleReply(obj, cId) {
+      const _this = this
+      if (obj.username && obj.username === this.ownUserName) {
+        // 删除comment 以及相关评论的所有回复
+        request({
+          url: '/delComAndRep',
+          data: {
+            commentId: cId,
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) {
+            commonWays.toast('删除评论')
+            _this.getCommentData(_this.recordId)
+          }
+        })
+      } else if (obj.userName && obj.userName === this.ownUserName) {
+        request({
+          url: '/delReply',
+          data: {
+            replyId: obj.replyId,
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) {
+            commonWays.toast('删除回复')
+            _this.getCommentData(_this.recordId)
+          }
+        })
+      } else {
+        // 添加回复，根据评论id
+        _this.showPop = true
+        _this.showPopChannel = false
+        _this.replyCommentId = cId
+        _this.repliedUserName = obj.userName || obj.username
+      }
+    },
+    selectLike(t) {
+      const _this = this
+      let value, time
+      let fchange = false
+      let cchange = false
+      if (t === 1) {
+        value = _this.favorite === '0' ? '1' : '0'
+        fchange = true
+      } else {
+        value = _this.collect === '0' ? '1' : '0'
+        cchange = true
+      }
+      time = commonWays.currentDate()
+      if (_this.likeId !== 0) {
+        request({
+          url: '/updateFaOrCol',
+          method: 'POST',
+          data: {
+            id: _this.likeId,
+            favorite: fchange ? value : _this.favorite,
+            collect: cchange ? value : _this.collect,
+            collectTime: cchange && value === '1' ? time : _this.collectTime,
+            favoriteTime: fchange && value === '1' ? time : _this.favoriteTime,
+          },
+        }).then((v) => {
+          _this.comFunction(v, value, fchange, cchange)
+        })
+      } else {
+        const _this = this
+        request({
+          url: '/addLike',
+          method: 'POST',
+          data: {
+            favorite: fchange ? value : _this.favorite,
+            collect: cchange ? value : _this.collect,
+            collectTime:
+              cchange && value === '1' ? time : '0000-00-00 00:00:00',
+            favoriteTime:
+              fchange && value === '1' ? time : '0000-00-00 00:00:00',
+            recordId: _this.recordId,
+            userId: getApp().globalData.$userId || get_userId(),
+          },
+        }).then((v) => {
+          _this.comFunction(v, value, fchange, cchange)
+        })
+      }
+    },
+    comFunction(v, value, fchange, cchange) {
+      if (v.statusCode === 200) {
+        if (fchange) {
+          commonWays.toast(value === '0' ? '取消点赞' : '点赞成功')
+        } else if (cchange) {
+          commonWays.toast(value === '0' ? '取消收藏' : '收藏成功')
+        }
+        this.getRecord(this.recordId)
+      } else {
+        commonWays.toast('操作失败')
+      }
+    },
+    textareaInput(e, count) {
+      // 去除换行和空格
+      e.detail.value = e.detail.value.replace(/[\r\n]/g, '')
+      this.showPopText = e.detail.value
+      if (e.detail.value.length > count) {
+        e.detail.value.length = count
+      }
+      this.inputTextLength = e.detail.value.length
+    },
   },
 }
 </script>
 
 <style lang="scss" scoped>
+@import '../../static/scss/common.scss';
 .r-box {
   padding-bottom: 20px;
   .r-personBox {
@@ -301,6 +494,22 @@ export default {
         width: 20px;
         height: 20px;
         margin: 0 3px;
+      }
+    }
+  }
+  .bt-pop {
+    .b-popMain {
+      padding: 15px;
+      box-sizing: border-box;
+      height: auto;
+      button {
+        width: 70px;
+        height: 35px;
+        line-height: 35px;
+        text-align: center;
+        letter-spacing: 4px;
+        color: white;
+        margin: 0 15px;
       }
     }
   }

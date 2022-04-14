@@ -31,7 +31,7 @@
       </uni-card>
     </template>
     <!-- 加载全部数据 -->
-    <template v-else>
+    <template v-else-if="likeList.length">
       <uni-card v-for="(l, lindex) in likeList" :key="lindex">
         <view class="f-item">
           <view v-if="l.recordImage" class="f-imgBox">
@@ -58,6 +58,10 @@
         </view>
       </uni-card>
     </template>
+    <view class="f-notBox" v-else>
+      <text>你还未{{ showText }}，</text>
+      <text>去选择你喜欢的记录吧!</text>
+    </view>
   </view>
 </template>
 
@@ -70,17 +74,20 @@ export default {
       baseUrl: `${BASE_URL}/static/`,
       likeList: [],
       filterlikeList: [],
+      showText: '',
     }
   },
   onLoad(e) {
     let title
     if (e.type === 'like') {
+      this.showText = '点赞'
       title = 'Favorite'
       this.getLikeData({
         userId: getApp().globalData.$userId || get_userId(),
         favorite: '1',
       })
     } else {
+      this.showText = '收藏'
       title = 'Collect'
       this.getLikeData({
         userId: getApp().globalData.$userId || get_userId(),
@@ -119,7 +126,7 @@ export default {
       }
     },
     jumpNextPage(record, type) {
-      commonWays.jumpToRecordDetail(record, type)
+      commonWays.jumpToRecordDetail(record.recordId, type)
     },
   },
 }
@@ -167,6 +174,16 @@ export default {
       bottom: 7px;
       right: 7px;
     }
+  }
+}
+.f-notBox {
+  text-align: center;
+  margin: 100px auto;
+  font-size: 20px;
+  color: #e8e;
+  text {
+    display: block;
+    line-height: 30px;
   }
 }
 </style>
