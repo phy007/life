@@ -1,11 +1,11 @@
 {
   "easycom": {
-		"autoscan": true,
-		"custom": {
-			// uni-ui 规则如下配置
-			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
-		}
-	},
+    "autoscan": true,
+    "custom": {
+      // uni-ui 规则如下配置
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
   "globalStyle": {
     "navigationBarBackgroundColor": "#7950EA",
     "navigationBarTextStyle": "white"
@@ -90,6 +90,12 @@
       "path": "pages/recordDetail/recordDetail",
       "style": {
         "navigationBarTitleText": "Record Detail"
+      }
+    },
+    {
+      "path": "pages/friends/friends",
+      "style": {
+        "navigationBarTitleText": "Friends List"
       }
     }
   ],

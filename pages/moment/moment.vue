@@ -1,5 +1,8 @@
 <template>
   <view class="m-box">
+    <view v-if="noticeSum" class="m-topMessage">
+      <navigator url="/pages/message/message">你有消息未读，点击跳转</navigator>
+    </view>
     <uni-segmented-control
       :current="current"
       :values="items"
@@ -249,6 +252,7 @@ export default {
       ownList: [],
       firList: [],
       commentandreplyList: [],
+      noticeSum: 0,
       showEditBox: false,
       showEditInfo: {},
       showEditTitle: '',
@@ -261,6 +265,7 @@ export default {
       showPop: false,
       showPopText: '',
       showPopChannel: false,
+      recordInfo: {},
       pattern: {
         color: '#7A7E83',
         backgroundColor: '#fff',
@@ -282,8 +287,8 @@ export default {
       ],
       content: [
         {
-          iconPath: '/static/img/message.png',
-          text: '消息',
+          iconPath: '/static/img/friends.png',
+          text: '好友',
         },
         {
           iconPath: '/static/img/record.png',
@@ -295,6 +300,7 @@ export default {
   onLoad() {
     this.getOwnData()
     this.getFirendsData()
+    this.getNoticeData()
   },
   methods: {
     getOwnData() {
@@ -320,7 +326,30 @@ export default {
         if (v.statusCode === 200) {
           _this.firList = v.data.friRecord
           _this.commentandreplyList = v.data.commentsAndReplys
-          console.log(v.data.commentsAndReplys)
+        }
+      })
+    },
+    getNoticeData() {
+      const _this = this
+      /* 进入页面，请求路径，获取所有未读的通知，tabbar角标提示，fab角标提示，消息角标提示，消息页面对应的角标提示 */
+      request({
+        url: '/getNotice',
+        data: {
+          useredId: getApp().globalData.$userId || get_userId(),
+        },
+      }).then((v) => {
+        if (v.statusCode === 200) {
+          _this.noticeSum = v.data.length
+          if (v.data.length) {
+            uni.setTabBarBadge({
+              index: 0,
+              text: `${v.data.length}`,
+            })
+          } else {
+            uni.removeTabBarBadge({
+              index: 0,
+            })
+          }
         }
       })
     },
@@ -520,6 +549,7 @@ export default {
       this.inputTextLength = 0
       this.showPopChannel = true
       this.recordId = f.recordId
+      this.recordInfo = f
     },
     cancelInput() {
       let message = this.showPopChannel ? '取消评论' : '取消回复'
@@ -529,6 +559,7 @@ export default {
     },
     sureInput() {
       const _this = this
+      const text = _this.showPopText
       if (this.showPopChannel) {
         request({
           url: '/addComment',
@@ -536,12 +567,13 @@ export default {
           data: {
             date: commonWays.currentDate(),
             content: _this.showPopText,
-            recordId: _this.recordId,
+            recordId: _this.recordInfo.recordId,
             commentUserId: getApp().globalData.$userId || get_userId(),
             userName: _this.ownUserName,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
+            _this.addNotice(v.data.id, 0, text)
             commonWays.toast('评论成功')
           }
         })
@@ -556,9 +588,11 @@ export default {
             userName: _this.ownUserName,
             userId: getApp().globalData.$userId || get_userId(),
             repliedUserName: _this.repliedUserName,
+            recordId: _this.recordInfo.recordId,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
+            _this.addNotice(0, v.data.id, text)
             commonWays.toast('回复成功')
           }
         })
@@ -566,6 +600,25 @@ export default {
       _this.showPop = false
       _this.showPopText = ''
       _this.getFirendsData()
+    },
+    addNotice(commentId, replyId, text) {
+      const _this = this
+      request({
+        url: '/addNotice',
+        method: 'POST',
+        data: {
+          type: '2',
+          useredId: _this.recordInfo.userId,
+          recordId: _this.recordInfo.recordId,
+          dateTime: commonWays.currentDate(),
+          noticeCotent: _this.showPopChannel
+            ? `评论：${text}`
+            : `回复：${text}`,
+          commentId,
+          replyId,
+          userId: getApp().globalData.$userId || get_userId(),
+        },
+      })
     },
     handleReply(obj, cId) {
       const _this = this
@@ -579,6 +632,7 @@ export default {
         }).then((v) => {
           if (v.statusCode === 200) {
             commonWays.toast('删除评论')
+            _this.delNotice({ commentId: cId })
             _this.getFirendsData()
           }
         })
@@ -591,6 +645,7 @@ export default {
         }).then((v) => {
           if (v.statusCode === 200) {
             commonWays.toast('删除回复')
+            _this.delNotice({ replyId: obj.replyId })
             _this.getFirendsData()
           }
         })
@@ -600,12 +655,21 @@ export default {
         _this.showPopChannel = false
         _this.replyCommentId = cId
         _this.repliedUserName = obj.userName || obj.username
+        _this.recordInfo = obj
       }
+    },
+    delNotice(obj) {
+      request({
+        url: '/delNotice',
+        data: obj,
+        method: 'POST',
+      })
     },
     selectLike(f, t) {
       let value, time
       let fchange = false
       let cchange = false
+      let data = {}
       if (t === 1) {
         value = f.favorite === '0' ? '1' : '0'
         fchange = true
@@ -627,6 +691,61 @@ export default {
           },
         }).then((v) => {
           this.comFunction(v, value, fchange, cchange)
+          if (fchange && value === '0') {
+            data = {
+              userId: getApp().globalData.$userId || get_userId(),
+              useredId: f.userId,
+              recordId: f.recordId,
+              favorite: '1',
+            }
+            request({
+              url: '/delNotice',
+              data,
+              method: 'POST',
+            })
+          } else if (cchange && value === '0') {
+            data = {
+              userId: getApp().globalData.$userId || get_userId(),
+              useredId: f.userId,
+              recordId: f.recordId,
+              collect: '1',
+            }
+            request({
+              url: '/delNotice',
+              data,
+              method: 'POST',
+            })
+          } else if (fchange && value === '1') {
+            data = {
+              type: '3',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '点赞',
+              favorite: '1',
+              recordId: f.recordId,
+              userId: getApp().globalData.$userId || get_userId(),
+            }
+            request({
+              url: '/addNotice',
+              method: 'POST',
+              data,
+            })
+          } else if (cchange && value === '1') {
+            data = {
+              type: '4',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '收藏',
+              collect: '1',
+              recordId: f.recordId,
+              userId: getApp().globalData.$userId || get_userId(),
+            }
+            request({
+              url: '/addNotice',
+              method: 'POST',
+              data,
+            })
+          }
         })
       } else {
         request({
@@ -644,6 +763,32 @@ export default {
           },
         }).then((v) => {
           this.comFunction(v, value, fchange, cchange)
+          if (fchange && value === '1') {
+            data = {
+              type: '3',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '点赞',
+              favorite: '1',
+              recordId: f.recordId,
+              userId: getApp().globalData.$userId || get_userId(),
+            }
+          } else if (cchange && value === '1') {
+            data = {
+              type: '4',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '收藏',
+              collect: '1',
+              recordId: f.recordId,
+              userId: getApp().globalData.$userId || get_userId(),
+            }
+          }
+          request({
+            url: '/addNotice',
+            method: 'POST',
+            data,
+          })
         })
       }
     },
@@ -675,9 +820,9 @@ export default {
         uni.navigateTo({
           url: '/pages/favorites/favorites?type=collect',
         })
-      } else if (e.item.text === '消息') {
+      } else if (e.item.text === '好友') {
         uni.navigateTo({
-          url: '/pages/message/message',
+          url: '/pages/friends/friends',
         })
       } else if (e.item.text === '记录') {
         this.showEditBox = true
@@ -702,7 +847,22 @@ export default {
   // #ifdef MP-WEIXIN
   padding-top: 15px;
   // #endif
-
+  .m-topMessage {
+    position: fixed;
+    background-color: #eef73f;
+    width: 100%;
+    z-index: 1;
+    // #ifdef MP-WEIXIN
+    top: 0;
+    // #endif
+    // #ifdef H5
+    top: 44px;
+    // #endif
+    padding: 3px 0;
+    text-align: center;
+    left: 0;
+    color: red;
+  }
   .m-top {
     margin-top: 15px;
     font-weight: bold;

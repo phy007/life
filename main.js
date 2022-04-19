@@ -1,9 +1,9 @@
 import App from './App'
-
 // #ifndef VUE3
 import Vue from 'vue'
 Vue.config.productionTip = false
 App.mpType = 'app'
+// 全局
 Vue.filter('formatTime', (t) => {
   const d = new Date(t)
   let h = d.getHours()
