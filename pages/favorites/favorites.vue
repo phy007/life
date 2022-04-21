@@ -3,8 +3,11 @@
     <uni-search-bar @confirm="search" :focus="true" maxlength="20">
     </uni-search-bar>
     <!-- 搜索框过滤数据展示 -->
-    <template v-if="filterlikeList.length">
-      <uni-card v-for="(l, lindex) in filterlikeList" :key="lindex">
+    <template v-if="filterlikeList && filterChannel">
+      <view class="com-notFound" v-if="filterlikeList.length === 0">
+        未找到相关记录
+      </view>
+      <uni-card v-else v-for="(l, lindex) in filterlikeList" :key="lindex">
         <view class="f-item">
           <view v-if="l.recordImage" class="f-imgBox">
             <image
@@ -75,6 +78,7 @@ export default {
       likeList: [],
       filterlikeList: [],
       showText: '',
+      filterChannel: false,
     }
   },
   onLoad(e) {
@@ -97,7 +101,6 @@ export default {
     uni.setNavigationBarTitle({
       title,
     })
-    console.log(this.likeList)
   },
   methods: {
     getLikeData(data) {
@@ -121,8 +124,10 @@ export default {
               res.value
             ) !== -1
         )
+        this.filterChannel = true
       } else {
         this.filterlikeList = []
+        this.filterChannel = false
       }
     },
     jumpNextPage(record, type) {
@@ -133,6 +138,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '../../static/scss/common.scss';
 .f-item {
   width: 100%;
   display: flex;

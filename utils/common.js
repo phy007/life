@@ -20,4 +20,9 @@ export const commonWays = {
       url: `/pages/recordDetail/recordDetail?id=${id}&type=${type}`,
     })
   },
+  jumpToProfilePage: (id) => {
+    uni.navigateTo({
+      url: `/pages/profile/profile?id=${id}`
+    })
+  }
 }

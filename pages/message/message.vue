@@ -1,43 +1,53 @@
 <template>
   <view>
-    <view class="m-top" v-if="notHandlelength" @click="handleNotNotice"
-      >清理所有未读消息</view
-    >
+    <view v-if="noticeList.length" class="m-top" @click="handleNotNotice">{{
+      notHandlelength ? '清理所有未读消息' : '清理所有已读消息'
+    }}</view>
     <uni-collapse ref="collapse" v-model="value">
-      <uni-collapse-item v-for="(t, i) in title" :key="i" :title="t">
+      <uni-collapse-item
+        v-for="(t, i) in title"
+        :key="i"
+        :title="noticeList[i] ? `${t} ${noticeList[i].length}` : `${t} 0`"
+      >
         <template v-if="noticeList[i]">
-          <uni-list-chat
+          <!-- :class="currentIndex === n.noticeId ? 'm-item' : 'm-none'" -->
+          <view
+            @longpress="longtap(n.noticeId)"
             v-for="(n, ii) in noticeList[i]"
             :key="ii"
-            :title="n.userName"
-            :avatar="
-              n.image ? `${baseUrl}${n.image}` : '/static/img/defaultuser.png'
-            "
-            :note="n.noticeCotent"
-            badge-positon="left"
-            :badge-text="n.handleNotice === '0' ? 'dot' : ''"
-            :to="
-              n.type !== '1'
-                ? `/pages/recordDetail/recordDetail?id=${n.recordId}`
-                : ''
-            "
-            clickable
-            @click="onClick(n)"
           >
-            <view v-if="n.type === '1'" class="chat-custom-right">
-              <button @click="handleApply(n)">
-                {{ n.handleApply === '1' ? '已添加' : '同意' }}
-              </button>
-            </view>
+            <uni-list-chat
+              :title="n.userName"
+              :avatar="
+                n.image ? `${baseUrl}${n.image}` : '/static/img/defaultuser.png'
+              "
+              :note="n.noticeCotent"
+              badge-positon="left"
+              :badge-text="n.handleNotice === '0' ? 'dot' : ''"
+              :to="
+                n.type !== '1'
+                  ? `/pages/recordDetail/recordDetail?id=${n.recordId}`
+                  : ''
+              "
+              clickable
+              @click="onClick(n)"
+            >
+              <view v-if="n.type === '1'" class="chat-custom-right">
+                <button @click="handleApply(n)">
+                  {{ n.handleApply === '1' ? '已添加' : '同意' }}
+                </button>
+              </view>
 
-            <view v-else class="chat-custom-right">
-              <text class="chat-custom-text">{{
-                n.dateTime | formatTime
-              }}</text>
-              <!-- 需要使用 uni-icons 请自行引入 -->
-              <uni-icons :type="icons[i]" color="#999" size="18"></uni-icons>
-            </view>
-          </uni-list-chat>
+              <view v-else class="chat-custom-right">
+                <text class="chat-custom-text">{{
+                  n.dateTime | formatTime
+                }}</text>
+                <!-- 需要使用 uni-icons 请自行引入 -->
+                <uni-icons :type="icons[i]" color="#999" size="18"></uni-icons>
+              </view>
+            </uni-list-chat>
+            <!-- <view class="tapBtn">删除</view> -->
+          </view>
         </template>
       </uni-collapse-item>
     </uni-collapse>
@@ -57,6 +67,7 @@ export default {
       notHandlelength: 0,
       value: [],
       noticeList: [],
+      // currentIndex: 0,
     }
   },
   onLoad() {
@@ -101,25 +112,56 @@ export default {
         })
       }
     },
+    longtap(id) {
+      // this.currentIndex = id
+      const _this = this
+      uni.showModal({
+        title: '提示',
+        content: `是否删除该消息？`,
+        success: function (res) {
+          if (res.confirm) {
+            request({
+              url: '/delNotice',
+              data: {
+                noticeId: id,
+              },
+            }).then((v) => {
+              if (v.statusCode === 200) {
+                _this.getNoticeData()
+                commonWays.toast('删除成功')
+              }
+            })
+          } else if (res.cancel) {
+            commonWays.toast('cancel operation')
+          }
+        },
+      })
+    },
     handleApply(n) {
-      console.log(n)
+      const _this = this
       if (n.handleApply === '0') {
         uni.showModal({
           title: '提示',
-          content: `是否添加好友：${n.userName}`,
+          content: `是否添加好友：${n.userName}？`,
           success: function (res) {
             if (res.confirm) {
-              uni
-                .navigateTo({
-                  url: '/addRelation',
-                  data: {
-                    friendId: n.friendId,
-                    ownId: getApp().globalData.$userId || get_userId(),
-                  },
-                })
-                .then((v) => {
-                  if (v.statusCode === 200) commonWays.toast('添加成功')
-                })
+              request({
+                url: '/addRelation',
+                data: {
+                  friendId: n.friendId,
+                  ownId: getApp().globalData.$userId || get_userId(),
+                },
+              }).then((v) => {
+                if (v.statusCode === 200) commonWays.toast('添加成功')
+              })
+              request({
+                url: '/hadleApply',
+                data: {
+                  noticeId: n.noticeId,
+                },
+              }).then((v) => {
+                if (v.statusCode === 200) _this.getNoticeData()
+              })
             } else if (res.cancel) {
               commonWays.toast('cancel operation')
             }
@@ -129,14 +171,25 @@ export default {
     },
     handleNotNotice() {
       const _this = this
-      request({
-        url: '/handleNotice',
-        data: {
-          id: getApp().globalData.$userId || get_userId(),
-        },
-      }).then((v) => {
-        if (v.statusCode === 200) _this.getNoticeData()
-      })
+      if (this.notHandlelength) {
+        request({
+          url: '/handleNotNotice',
+          data: {
+            id: getApp().globalData.$userId || get_userId(),
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) _this.getNoticeData()
+        })
+      } else {
+        request({
+          url: '/delhandleNotice',
+          data: {
+            id: getApp().globalData.$userId || get_userId(),
+          },
+        }).then((v) => {
+          if (v.statusCode === 200) _this.getNoticeData()
+        })
+      }
     },
   },
 }
@@ -174,4 +227,26 @@ export default {
   font-size: 12px;
   color: #999;
 }
+// 为找到一个合适的方式，点击其他地方，修改currentIndex的值，隐藏删除字样
+/* .m-none {
+  .tapBtn {
+    display: none;
+  }
+}
+.m-item {
+  position: relative;
+  .tapBtn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba($color: #ea3ae1, $alpha: 0.7);
+    width: 100%;
+    height: 100%;
+    line-height: 69px;
+    font-size: 20px;
+    color: #fff;
+    text-align: center;
+    display: block;
+  }
+} */
 </style>

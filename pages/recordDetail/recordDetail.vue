@@ -8,7 +8,7 @@
         mode="widthFix"
       ></image>
       <view>
-        <text>{{ record.userName }}</text>
+        <text @click="jumpToProfilePage(record.userId)">{{ record.userName }}</text>
         <text>{{ record.time | formatTime }}</text>
       </view>
     </view>
@@ -93,7 +93,7 @@
                 : '/static/img/defaultuser.png'
             "
           ></image>
-          <text class="r-comName">{{ c.username }}：</text>
+          <text class="r-comName" @click="jumpToProfilePage(c.commentUserId)">{{ c.username }}：</text>
           <text>{{ c.content }}</text>
           <uni-icons
             :type="c.username === ownUserName ? 'close' : 'chatbubble'"
@@ -114,7 +114,7 @@
                     : '/static/img/defaultuser.png'
                 "
               ></image>
-              <text class="r-comName">{{ r.userName }}：</text>
+              <text class="r-comName" @click="jumpToProfilePage(r.userId)">{{ r.userName }}：</text>
               <text>{{ r.replyContent }}</text>
               <uni-icons
                 :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
@@ -250,6 +250,9 @@ export default {
           _this.favoriteCount = v.data.favorite
         }
       })
+    },
+    jumpToProfilePage(id) {
+      commonWays.jumpToProfilePage(id)
     },
     addComment() {
       this.showPop = true

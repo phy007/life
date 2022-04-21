@@ -17,7 +17,10 @@
           <uni-card class="content" v-for="(o, oi) in ownList" :key="oi">
             <template v-slot:title>
               <uni-list>
-                <uni-list-item :title="o.userName" />
+                <uni-list-item
+                  :to="`/pages/profile/profile?id=${o.userId}`"
+                  :title="o.userName"
+                />
                 <text class="m-time">{{ o.time | formatTime }}</text>
               </uni-list>
             </template>
@@ -122,7 +125,10 @@
         <uni-card class="content" v-for="(f, i) in firList" :key="i">
           <template v-slot:title>
             <uni-list>
-              <uni-list-item :title="f.userName" />
+              <uni-list-item
+                :to="`/pages/profile/profile?id=${f.userId}`"
+                :title="f.userName"
+              />
               <text class="m-time">{{ f.time | formatTime }}</text>
             </uni-list>
           </template>
@@ -168,7 +174,11 @@
               :key="cindex"
             >
               <view>
-                <text class="m-comName">{{ c.username }}：</text>
+                <text
+                  @click="jumpToProfilePage(c.commentUserId)"
+                  class="m-comName"
+                  >{{ c.username }}：</text
+                >
                 <text class="m-comMain">{{ c.content }}</text>
                 <uni-icons
                   :type="c.username === ownUserName ? 'close' : 'chatbubble'"
@@ -178,8 +188,14 @@
                 ></uni-icons>
                 <template v-if="c.replys">
                   <view v-for="(r, rindex) in c.replys" :key="rindex">
-                    <text class="m-comName"
-                      >{{ r.userName }}回复{{ r.repliedUserName }}：</text
+                    <view class="m-comName"
+                      ><text @click="jumpToProfilePage(r.userId)">{{
+                        r.userName
+                      }}</text
+                      >回复<text @click="jumpToProfilePage(r.repliedUserId)">{{
+                        r.repliedUserName
+                      }}</text
+                      >：</view
                     >
                     <text class="m-comMain">{{ r.replyContent }}</text>
                     <uni-icons
@@ -352,6 +368,9 @@ export default {
           }
         }
       })
+    },
+    jumpToProfilePage(id) {
+      commonWays.jumpToProfilePage(id)
     },
     delRecord(r) {
       const _this = this
@@ -921,6 +940,7 @@ export default {
         }
         .m-comItem {
           .m-comName {
+            display: inline-block;
             font-size: 15px;
             font-weight: bold;
             color: #d5067c;

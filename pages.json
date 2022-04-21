@@ -97,6 +97,12 @@
       "style": {
         "navigationBarTitleText": "Friends List"
       }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "Profile"
+      }
     }
   ],
   "tabBar": {
