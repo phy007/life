@@ -130,3 +130,47 @@
   margin-top: 50px;
   font-size: 20px;
 }
+.p-info {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  // #ifdef MP-WEIXIN
+  box-sizing: border-box;
+  padding-right: 36px;
+  // #endif
+  .uni-icons {
+    width: 30px;
+    margin-right: 20px;
+  }
+  image {
+    width: 80px;
+    height: 80px;
+    margin: 15px 16px;
+  }
+  .p-info-title {
+    width: 200px;
+    text {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .p-alias {
+      display: block;
+      font-size: 18px;
+      color: #cfcaca;
+      margin-top: 5px;
+    }
+  }
+  .p-info-forward {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .p-info-right {
+    text-align: right;
+    padding-right: 15px;
+    flex: 1;
+    color: #e8e;
+  }
+}

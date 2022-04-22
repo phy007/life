@@ -1,76 +1,66 @@
 <template>
   <view>
-    <user-protocol v-if="forwardType === 1"></user-protocol>
-    <privacy-policy v-else-if="forwardType === 2"></privacy-policy>
-    <feedback v-else-if="forwardType === 3"></feedback>
-    <template v-else>
-      <view class="s-box">
-        <view class="sb-item">
-          <text>账号资料</text>
-          <uni-icons type="right" size="24" @click="jumpNextPage"></uni-icons>
-        </view>
+    <view class="s-box">
+      <view class="sb-item">
+        <text>账号资料</text>
+        <uni-icons type="right" size="24" @click="jumpNextPage"></uni-icons>
       </view>
-      <view class="s-box">
-        <view class="sb-item">
-          <text>个人可见</text>
-          <switch
-            style="transform: scale(0.7)"
-            @change="switchChange1"
-            checked
-          />
-        </view>
-        <view class="sb-item">
-          <text>好友可见</text>
-          <switch style="transform: scale(0.7)" @change="switchChange2" />
-        </view>
+    </view>
+    <view class="s-box">
+      <view class="sb-item">
+        <text>个人可见</text>
+        <switch
+          style="transform: scale(0.7)"
+          @change="switchChange"
+          :checked="isChecked"
+        />
       </view>
-      <view class="s-box">
-        <view class="sb-item">
-          <text>用户协议</text>
-          <uni-icons type="right" size="24" @click="showNext(1)"></uni-icons>
-        </view>
-        <view class="sb-item">
-          <text>隐私政策</text>
-          <uni-icons type="right" size="24" @click="showNext(2)"></uni-icons>
-        </view>
-        <view class="sb-item">
-          <text>我要反馈</text>
-          <uni-icons type="right" size="24" @click="showNext(3)"></uni-icons>
-        </view>
+    </view>
+    <view class="s-box">
+      <view class="sb-item" @click="loginout">
+        <text>退出登录</text>
       </view>
-      <view class="s-box">
-        <view class="sb-item" @click="loginout">
-          <text>退出登录</text>
-        </view>
-      </view>
-    </template>
+    </view>
   </view>
 </template>
 
 <script>
-import Feedback from '../../component/profile/Feedback.vue'
-import PrivacyPolicy from '../../component/profile/PrivacyPolicy.vue'
-import UserProtocol from '../../component/profile/UserProtocol.vue'
+import { request } from '../../utils/request'
 import { get_userId } from '../../utils/storage'
 export default {
-  components: { UserProtocol, PrivacyPolicy, Feedback },
   data() {
     return {
-      forwardType: -1,
+      power: '',
+      isChecked: false,
+      userId: getApp().globalData.$userId || get_userId(),
     }
   },
+  onLoad(e) {
+    if (e.p === '1') {
+      this.isChecked = true
+    } else {
+      this.isChecked = false
+    }
+    this.power = e.p
+  },
   methods: {
-    switchChange1(e) {
-      console.log(e.detail.value)
-    },
-    switchChange2(e) {
-      console.log(e.detail.value)
+    switchChange(e) {
+      const _this = this
+      if (this.isChecked !== e.detail.value) {
+        request({
+          url: '/updatePower',
+          data: {
+            power: e.detail.value ? '1' : '0',
+            userId: _this.userId,
+          },
+        })
+        this.isChecked = e.detail.value
+      }
     },
     jumpNextPage() {
+      const _this = this
       uni.navigateTo({
-        url:
-          '/pages/accountDetail/accountDetail?userId=' +
-          getApp().globalData.$userId || get_userId(),
+        url: '/pages/accountDetail/accountDetail?id=' + _this.userId,
       })
     },
     showNext(t) {

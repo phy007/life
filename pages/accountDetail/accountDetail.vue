@@ -110,9 +110,9 @@ export default {
     }
   },
   onLoad(e) {
-    this.userId = e.userId
+    this.userId = e.id
     this.getUser()
-    console.log(e)
+
   },
   methods: {
     getUser() {

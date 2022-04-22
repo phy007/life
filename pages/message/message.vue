@@ -1,8 +1,8 @@
 <template>
   <view>
-    <view v-if="noticeList.length" class="m-top" @click="handleNotNotice">{{
-      notHandlelength ? '清理所有未读消息' : '清理所有已读消息'
-    }}</view>
+    <view v-if="showMessage" class="m-top" @click="handleNotNotice"
+      >{{ notHandlelength ? '清理所有未读消息' : '清理所有已读消息' }}
+    </view>
     <uni-collapse ref="collapse" v-model="value">
       <uni-collapse-item
         v-for="(t, i) in title"
@@ -67,6 +67,7 @@ export default {
       notHandlelength: 0,
       value: [],
       noticeList: [],
+      showMessage: true,
       // currentIndex: 0,
     }
   },
@@ -85,17 +86,21 @@ export default {
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.noticeList = v.data.arr
+          console.log(v.data.arr);
           _this.notHandlelength = v.data.length
           let arr = v.data.arr,
-            str = ''
-          if (v.data.length) {
-            for (let i = 0; i < 4; i++) {
-              if (arr[i].length) {
-                str += i + '&'
-              }
+            str = '',
+            count = 0
+          for (let i = 0; i < 4; i++) {
+            if (arr[i].length) {
+              str += i + '&'
+              count += arr[i].length
             }
-            _this.value = str.split('&')
           }
+          if (!count) {
+            _this.showMessage = false
+          }
+          _this.value = str.split('&')
         }
       })
     },

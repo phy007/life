@@ -3,66 +3,57 @@
     <view class="p-info">
       <image v-if="userInfo.image" :src="`${baseUrl}${userInfo.image}`"></image>
       <image v-else src="/static/img/defaultuser.png"></image>
-      <view>
+      <view class="p-info-title">
         <text>{{ userInfo.phone }}</text>
         <text class="p-alias">昵称：{{ userInfo.userName || '未定义' }}</text>
       </view>
-      <uni-icons
-        type="gear-filled"
-        size="30"
-        color="#7950ea"
-        @click="jumpNextPage(1)"
-      ></uni-icons>
+      <view class="p-info-forward">
+        <navigator :url="`/pages/profile/profile?id=${userId}`">
+          <uni-icons type="forward" size="20"></uni-icons>
+        </navigator>
+      </view>
     </view>
     <view class="p-concat">
-      <view>
+      <view class="p-conMain" @click="jumpMomentPage">
         <text>动态</text>
-        <text>0</text>
+        <text>{{ mCount }}</text>
+      </view>
+      <navigator class="p-conMain" :url="`/pages/friends/friends?id=${userId}`">
+        <text>好友</text>
+        <text>{{ fCount }}</text>
+      </navigator>
+    </view>
+    <view class="p-tag"> 欢迎来到我的世界！！！ </view>
+    <view class="p-likeBox">
+      <view>
+        <navigator :url="`/pages/favorites/favorites?id=${userId}&type=like`">
+          <uni-icons type="star" size="30" color="#7950EA"></uni-icons>
+          <text>收藏</text>
+        </navigator>
       </view>
       <view>
-        <text>好友</text>
-        <text>0</text>
+        <navigator
+          :url="`/pages/favorites/favorites?id=${userId}&type=collect`"
+        >
+          <uni-icons type="hand-up" size="30" color="#7950EA"></uni-icons>
+          <text>点赞</text>
+        </navigator>
+      </view>
+      <view>
+        <navigator :url="`/pages/setPage/setPage?p=${userInfo.power}`">
+          <uni-icons type="gear" size="30" color="#7950EA"></uni-icons>
+          <text>设置</text>
+        </navigator>
       </view>
     </view>
-    <!-- 点赞区 -->
-    <view class="p-mainBox">
-      <view class="p-mBTop">
-        <uni-icons type="heart-filled" size="30" color="#7950ea"></uni-icons>
-        <text>我的喜欢</text>
-        <text class="p-mBMore" @click="jumpNextPage(2)">查看更多</text>
-      </view>
-      <view class="p-like">
-        <view class="pLItem">
-          <text>点赞内容1</text>
-          <text>点赞时间</text>
-        </view>
-        <view class="pLItem">
-          <text>点赞内容2</text>
-          <text>点赞时间</text>
-        </view>
-        <view class="pLItem">
-          <text>点赞内容3</text>
-          <text>点赞时间</text>
-        </view>
-        <view class="pLItem">
-          <text>点赞内容4</text>
-          <text>点赞时间</text>
-        </view>
-      </view>
-    </view>
-    <!-- 收藏区 -->
-    <view class="p-mainBox">
-      <view class="p-mBTop">
-        <uni-icons type="star-filled" size="30" color="#7950ea"></uni-icons>
-        <text>我的收藏</text>
-        <text class="p-mBMore" @click="jumpNextPage(3)">查看更多</text>
-      </view>
-      <view class="p-collect">
-        <view>
-          <text>收藏内容</text>
-          <text>收藏时间</text>
-        </view>
-      </view>
+    <view class="p-moreBox">
+      <view class="p-moreBTitle">更多服务</view>
+      <uni-list>
+        <!-- clickable 才能触发事件 -->
+        <uni-list-item title="用户协议" showArrow></uni-list-item>
+        <uni-list-item title="隐私政策" showArrow></uni-list-item>
+        <uni-list-item title="我要反馈" showArrow></uni-list-item>
+      </uni-list>
     </view>
   </view>
 </template>
@@ -70,45 +61,42 @@
 <script>
 import { request, BASE_URL } from '../../utils/request'
 import { get_userId } from '../../utils/storage'
+
 export default {
   data() {
     this.baseUrl = `${BASE_URL}/static/`
     return {
       userInfo: {},
+      userId: getApp().globalData.$userId || get_userId(),
+      mCount: 0,
+      fCount: 0,
+      showType: 0,
     }
   },
   onLoad() {
-    console.log('object');
+    this.getUser()
+  },
+  onShow() {
     this.getUser()
   },
   methods: {
-    jumpNextPage(t) {
-      if (t === 1) {
-        uni.navigateTo({
-          url: '/pages/setPage/setPage',
-        })
-      } else if (t === 2) {
-        uni.navigateTo({
-          url: '/pages/favorites/favorites?type=like',
-        })
-      } else if (t === 3) {
-        uni.navigateTo({
-          url: '/pages/favorites/favorites?type=collect',
-        })
-      }
-    },
     getUser() {
+      const _this = this
       request({
-        url: '/getUser',
-        data: { userId: getApp().globalData.$userId || get_userId() },
+        url: '/getProfile',
+        data: { userId: _this.userId },
       }).then((v) => {
-        const { statusCode } = v
-        const { code, data } = v.data
-        if (statusCode === 200) {
-          if (code === 1 && data.length) {
-            this.userInfo = data[0]
-          }
+        const { user, momentCount, friendCount } = v.data
+        if (v.statusCode === 200) {
+          _this.userInfo = user
+          _this.mCount = momentCount
+          _this.fCount = friendCount
         }
+      })
+    },
+    jumpMomentPage() {
+      uni.switchTab({
+        url: '/pages/moment/moment',
       })
     },
   },
@@ -116,38 +104,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.p-info {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  // #ifdef MP-WEIXIN
-  box-sizing: border-box;
-  padding-right: 36px;
-  // #endif
-  .uni-icons {
-    width: 30px;
-    margin-right: 20px;
-  }
-  image {
-    width: 80px;
-    height: 80px;
-    margin: 15px 16px;
-  }
-  view {
-    flex: 1;
-    text {
-      font-size: 22px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-    .p-alias {
-      display: block;
-      font-size: 18px;
-      color: #cfcaca;
-      margin-top: 5px;
-    }
-  }
-}
+@import '../../static/scss/common.scss';
+
 .p-concat {
   width: 100%;
   display: flex;
@@ -157,7 +115,8 @@ export default {
   text-align: center;
   font-size: 17px;
   color: #c290be;
-  view {
+  margin-bottom: 5px;
+  .p-conMain {
     width: 50%;
     text {
       display: block;
@@ -171,61 +130,45 @@ export default {
     border-left: 1px solid #e5e5e5;
   }
 }
-.p-mainBox {
-  margin-top: 15px;
-  .p-mBTop {
-    width: 100%;
-    padding-left: 5px;
-    display: flex;
-    align-items: center;
+.p-tag {
+  height: 60px;
+  line-height: 60px;
+  text-align: center;
+  background: linear-gradient(
+    to bottom left,
+    #e815d6,
+    rgb(135, 135, 235),
+    pink
+  );
+  opacity: 0.7;
+  letter-spacing: 1px;
+  width: 96%;
+  color: rgb(65, 63, 63);
+  margin: 0 auto;
+  border-radius: 15px;
+}
+.p-likeBox {
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 10px;
+  view {
+    width: 25%;
     text {
-      font-size: 20px;
-      font-weight: bold;
-      color: #7950ea;
-      margin-left: 4px;
-      letter-spacing: 1px;
-    }
-    .p-mBMore {
-      flex: 1;
-      font-weight: bold;
-      font-size: 16px;
-      text-align: right;
-      margin-right: 20px;
-      text-decoration: underline;
+      display: block;
+      margin-top: 5px;
+      text-align: center;
     }
   }
-  .p-like,
-  .p-collect {
-    width: auto;
-    height: 120px;
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 10px;
-    view {
-      min-width: 130px;
-      margin: 0 6px;
-      text {
-        display: block;
-      }
-      text:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        height: 80px;
-        outline: 1px solid #7950ea;
-        border-radius: 5px;
-        padding: 5px;
-      }
-      text:nth-child(2) {
-        margin: 4px;
-        color: #cfcaca;
-        letter-spacing: 1px;
-      }
-    }
-  }
-  .p-like::-webkit-scrollbar,
-  .p-collect::-webkit-scrollbar {
-    display: none;
+}
+.p-moreBox {
+  .p-moreBTitle {
+    margin: 0 0 6px 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #7950ea;
   }
 }
 </style>

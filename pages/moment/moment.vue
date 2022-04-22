@@ -307,6 +307,10 @@ export default {
           text: '好友',
         },
         {
+          iconPath: '/static/img/message.png',
+          text: '消息',
+        },
+        {
           iconPath: '/static/img/record.png',
           text: '记录',
         },
@@ -851,6 +855,10 @@ export default {
         this.inputText = ''
         this.imgLength = 0
         this.inputTextLength = 0
+      }else if(e.item.text === '消息'){
+        uni.navigateTo({
+          url:'/pages/message/message'
+        })
       }
     },
     jumpNextPage(record, type) {

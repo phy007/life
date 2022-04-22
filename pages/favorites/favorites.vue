@@ -87,14 +87,14 @@ export default {
       this.showText = '点赞'
       title = 'Favorite'
       this.getLikeData({
-        userId: getApp().globalData.$userId || get_userId(),
+        userId: e.id,
         favorite: '1',
       })
     } else {
       this.showText = '收藏'
       title = 'Collect'
       this.getLikeData({
-        userId: getApp().globalData.$userId || get_userId(),
+        userId: e.id,
         collect: '1',
       })
     }
