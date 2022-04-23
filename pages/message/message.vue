@@ -86,7 +86,6 @@ export default {
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.noticeList = v.data.arr
-          console.log(v.data.arr);
           _this.notHandlelength = v.data.length
           let arr = v.data.arr,
             str = '',

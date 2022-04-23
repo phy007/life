@@ -8,7 +8,9 @@
         mode="widthFix"
       ></image>
       <view>
-        <text @click="jumpToProfilePage(record.userId)">{{ record.userName }}</text>
+        <text @click="jumpToProfilePage(record.userId)">{{
+          record.userName
+        }}</text>
         <text>{{ record.time | formatTime }}</text>
       </view>
     </view>
@@ -55,17 +57,17 @@
       </template>
 
       <template v-else>
-        <view @click="selectLike(1)">
+        <view @click="selectLike(record, 1)">
           <uni-icons
-            :type="favorite === '1' ? 'hand-up-filled' : 'hand-up'"
+            :type="record.favorite === '1' ? 'hand-up-filled' : 'hand-up'"
             size="24"
             color="#999"
           ></uni-icons>
           <text>点赞</text>
         </view>
-        <view @click="selectLike(2)">
+        <view @click="selectLike(record, 2)">
           <uni-icons
-            :type="collect === '1' ? 'star-filled' : 'star'"
+            :type="record.collect === '1' ? 'star-filled' : 'star'"
             size="24"
             color="#999"
           ></uni-icons>
@@ -93,7 +95,9 @@
                 : '/static/img/defaultuser.png'
             "
           ></image>
-          <text class="r-comName" @click="jumpToProfilePage(c.commentUserId)">{{ c.username }}：</text>
+          <text class="r-comName" @click="jumpToProfilePage(c.commentUserId)"
+            >{{ c.username }}：</text
+          >
           <text>{{ c.content }}</text>
           <uni-icons
             :type="c.username === ownUserName ? 'close' : 'chatbubble'"
@@ -114,7 +118,9 @@
                     : '/static/img/defaultuser.png'
                 "
               ></image>
-              <text class="r-comName" @click="jumpToProfilePage(r.userId)">{{ r.userName }}：</text>
+              <text class="r-comName" @click="jumpToProfilePage(r.userId)"
+                >{{ r.userName }}：</text
+              >
               <text>{{ r.replyContent }}</text>
               <uni-icons
                 :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
@@ -174,14 +180,13 @@ export default {
       baseUrl: `${BASE_URL}/static/`,
       type: '',
       record: {},
-      collect: '0',
-      favorite: '0',
       collectCount: 0,
       favoriteCount: 0,
-      likeId: 0,
       showPop: false,
       showPopText: '',
       inputTextLength: 0,
+      showPopChannel: true,
+      userId: getApp().globalData.$userId || get_userId(),
     }
   },
   onLoad(e) {
@@ -189,7 +194,6 @@ export default {
     this.type = e.type
     this.ownUserName = get_userName()
     this.getRecord(e.id)
-    this.getUserImg(this.record.userId)
     this.getCommentData(e.id)
   },
   methods: {
@@ -203,24 +207,12 @@ export default {
         },
       }).then((v) => {
         if (v.statusCode === 200) {
-          _this.record = v.data
+          _this.record = v.data.recordInfo
+          _this.userImage = v.data.userImage
           if (_this.type === 'own') {
             _this.getColAndFavCount(v.data.recordId)
-          } else {
-            _this.favorite = v.data.favorite
-            _this.collect = v.data.collect
-            _this.likeId = v.data.likeId
           }
         }
-      })
-    },
-    getUserImg(id) {
-      const _this = this
-      request({
-        url: '/getUserImg',
-        data: { userId: id },
-      }).then((v) => {
-        _this.userImage = v.data.image
       })
     },
     getCommentData(id) {
@@ -267,6 +259,7 @@ export default {
     },
     sureInput() {
       const _this = this
+      const text = _this.showPopText
       if (this.showPopChannel) {
         request({
           url: '/addComment',
@@ -275,11 +268,12 @@ export default {
             date: commonWays.currentDate(),
             content: _this.showPopText,
             recordId: _this.record.recordId,
-            commentUserId: getApp().globalData.$userId || get_userId(),
+            commentUserId: _this.userId,
             userName: _this.ownUserName,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
+            _this.addNotice(v.data.id, 0, text)
             commonWays.toast('评论成功')
           }
         })
@@ -292,11 +286,12 @@ export default {
             replyContent: _this.showPopText,
             replyDate: commonWays.currentDate(),
             userName: _this.ownUserName,
-            userId: getApp().globalData.$userId || get_userId(),
+            userId: _this.userId,
             repliedUserName: _this.repliedUserName,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
+            _this.addNotice(0, v.data.id, text)
             commonWays.toast('回复成功')
           }
         })
@@ -340,50 +335,150 @@ export default {
         _this.repliedUserName = obj.userName || obj.username
       }
     },
-    selectLike(t) {
+    addNotice(commentId, replyId, text) {
+      const _this = this
+      request({
+        url: '/addNotice',
+        method: 'POST',
+        data: {
+          type: '2',
+          useredId: _this.record.userId,
+          recordId: _this.record.recordId,
+          dateTime: commonWays.currentDate(),
+          noticeCotent: _this.showPopChannel
+            ? `评论：${text}`
+            : `回复：${text}`,
+          commentId,
+          replyId,
+          userId: _this.userId,
+        },
+      })
+    },
+    selectLike(f, t) {
       const _this = this
       let value, time
       let fchange = false
       let cchange = false
+      let data = {}
       if (t === 1) {
-        value = _this.favorite === '0' ? '1' : '0'
+        value = f.favorite === '0' ? '1' : '0'
         fchange = true
       } else {
-        value = _this.collect === '0' ? '1' : '0'
+        value = f.collect === '0' ? '1' : '0'
         cchange = true
       }
       time = commonWays.currentDate()
-      if (_this.likeId !== 0) {
+      if (f.likeId !== 0) {
         request({
           url: '/updateFaOrCol',
           method: 'POST',
           data: {
-            id: _this.likeId,
-            favorite: fchange ? value : _this.favorite,
-            collect: cchange ? value : _this.collect,
-            collectTime: cchange && value === '1' ? time : _this.collectTime,
-            favoriteTime: fchange && value === '1' ? time : _this.favoriteTime,
+            id: f.likeId,
+            favorite: fchange ? value : f.favorite,
+            collect: cchange ? value : f.collect,
+            collectTime: cchange && value === '1' ? time : f.collectTime,
+            favoriteTime: fchange && value === '1' ? time : f.favoriteTime,
           },
         }).then((v) => {
-          _this.comFunction(v, value, fchange, cchange)
+          this.comFunction(v, value, fchange, cchange)
+          if (fchange && value === '0') {
+            data = {
+              userId: _this.userId,
+              useredId: f.userId,
+              recordId: f.recordId,
+              favorite: '1',
+            }
+            request({
+              url: '/delNotice',
+              data,
+              method: 'POST',
+            })
+          } else if (cchange && value === '0') {
+            data = {
+              userId: _this.userId,
+              useredId: f.userId,
+              recordId: f.recordId,
+              collect: '1',
+            }
+            request({
+              url: '/delNotice',
+              data,
+              method: 'POST',
+            })
+          } else if (fchange && value === '1') {
+            data = {
+              type: '3',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '点赞',
+              favorite: '1',
+              recordId: f.recordId,
+              userId: _this.userId,
+            }
+            request({
+              url: '/addNotice',
+              method: 'POST',
+              data,
+            })
+          } else if (cchange && value === '1') {
+            data = {
+              type: '4',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '收藏',
+              collect: '1',
+              recordId: f.recordId,
+              userId: _this.userId,
+            }
+            request({
+              url: '/addNotice',
+              method: 'POST',
+              data,
+            })
+          }
         })
       } else {
-        const _this = this
         request({
           url: '/addLike',
           method: 'POST',
           data: {
-            favorite: fchange ? value : _this.favorite,
-            collect: cchange ? value : _this.collect,
+            favorite: fchange ? value : f.favorite,
+            collect: cchange ? value : f.collect,
             collectTime:
               cchange && value === '1' ? time : '0000-00-00 00:00:00',
             favoriteTime:
               fchange && value === '1' ? time : '0000-00-00 00:00:00',
-            recordId: _this.recordId,
-            userId: getApp().globalData.$userId || get_userId(),
+            recordId: f.recordId,
+            userId: _this.userId,
           },
         }).then((v) => {
-          _this.comFunction(v, value, fchange, cchange)
+          this.comFunction(v, value, fchange, cchange)
+          if (fchange && value === '1') {
+            data = {
+              type: '3',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '点赞',
+              favorite: '1',
+              recordId: f.recordId,
+              userId: _this.userId,
+            }
+          } else if (cchange && value === '1') {
+            data = {
+              type: '4',
+              useredId: f.userId,
+              dateTime: commonWays.currentDate(),
+              noticeCotent: '收藏',
+              collect: '1',
+              recordId: f.recordId,
+              userId: _this.userId,
+            }
+          }
+          request({
+            url: '/addNotice',
+            method: 'POST',
+            data,
+          })
         })
       }
     },
@@ -394,7 +489,7 @@ export default {
         } else if (cchange) {
           commonWays.toast(value === '0' ? '取消收藏' : '收藏成功')
         }
-        this.getRecord(this.recordId)
+        this.getRecord()
       } else {
         commonWays.toast('操作失败')
       }
@@ -419,10 +514,10 @@ export default {
   .r-personBox {
     margin: 20px;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     image {
       width: 60px;
-      height: auto;
+      height: 60px;
       margin-right: 10px;
     }
     view {
@@ -467,10 +562,11 @@ export default {
   .r-iconBox {
     display: flex;
     justify-content: flex-end;
-    padding: 5px 20px;
-    .uni-icons {
+    margin-right: 20px;
+    view {
       margin-left: 10px;
-      margin-right: 1px;
+      display: flex;
+      align-items: center;
     }
   }
   .r-commentBox {

@@ -14,7 +14,7 @@
     <view class="content">
       <view v-show="current === 0">
         <template v-if="!showEditBox">
-          <uni-card class="content" v-for="(o, oi) in ownList" :key="oi">
+          <uni-card v-for="(o, oi) in ownList" :key="oi">
             <template v-slot:title>
               <uni-list>
                 <uni-list-item
@@ -122,7 +122,7 @@
         />
       </view>
       <view v-show="current === 1">
-        <uni-card class="content" v-for="(f, i) in firList" :key="i">
+        <uni-card v-for="(f, i) in firList" :key="i">
           <template v-slot:title>
             <uni-list>
               <uni-list-item
@@ -263,6 +263,7 @@ export default {
     return {
       baseUrl: `${BASE_URL}/static/`,
       items: ['我的', '好友'],
+      userId: getApp().globalData.$userId || get_userId(),
       current: 0,
       ownUserName: '',
       ownList: [],
@@ -322,12 +323,15 @@ export default {
     this.getFirendsData()
     this.getNoticeData()
   },
+  onShow() {
+    this.getNoticeData()
+  },
   methods: {
     getOwnData() {
       const _this = this
       request({
         url: '/getOwnRecords',
-        data: { userId: getApp().globalData.$userId || get_userId() },
+        data: { userId: _this.userId },
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.ownUserName = v.data.ownRecord[0].userName
@@ -341,7 +345,7 @@ export default {
       const _this = this
       request({
         url: '/getFriRecords',
-        data: { userId: getApp().globalData.$userId || get_userId() },
+        data: { userId: _this.userId },
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.firList = v.data.friRecord
@@ -355,7 +359,7 @@ export default {
       request({
         url: '/getNotice',
         data: {
-          useredId: getApp().globalData.$userId || get_userId(),
+          useredId: _this.userId,
         },
       }).then((v) => {
         if (v.statusCode === 200) {
@@ -416,7 +420,6 @@ export default {
       this.inputText = this.showEditInfo.recordText
       this.inputTextLength = record.recordText.length
       this.tempImgArr = []
-      console.log(this.existImgArr)
     },
     uploadImg() {
       let _this = this
@@ -426,7 +429,6 @@ export default {
         sizeType: ['copressed'],
         sourceType: ['album', 'camera'], //album 从相册选图,camera 使用相机
         success(res) {
-          console.log(res.tempFiles)
           _this.tempImgArr = [..._this.tempImgArr, ...res.tempFilePaths]
           _this.imgLength += res.tempFiles.length
         },
@@ -545,7 +547,7 @@ export default {
             url: '/addRecord',
             data: {
               userName: this.ownName,
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
               recordText: this.inputText,
               recordImage: imgStr,
               power: this.power,
@@ -591,7 +593,7 @@ export default {
             date: commonWays.currentDate(),
             content: _this.showPopText,
             recordId: _this.recordInfo.recordId,
-            commentUserId: getApp().globalData.$userId || get_userId(),
+            commentUserId: _this.userId,
             userName: _this.ownUserName,
           },
         }).then((v) => {
@@ -609,7 +611,7 @@ export default {
             replyContent: _this.showPopText,
             replyDate: commonWays.currentDate(),
             userName: _this.ownUserName,
-            userId: getApp().globalData.$userId || get_userId(),
+            userId: _this.userId,
             repliedUserName: _this.repliedUserName,
             recordId: _this.recordInfo.recordId,
           },
@@ -639,7 +641,7 @@ export default {
             : `回复：${text}`,
           commentId,
           replyId,
-          userId: getApp().globalData.$userId || get_userId(),
+          userId: _this.userId,
         },
       })
     },
@@ -688,7 +690,9 @@ export default {
         method: 'POST',
       })
     },
+    /* 点赞收藏：点赞收藏成功会通知对方，如果取消点赞/收藏，即取消通知 */
     selectLike(f, t) {
+      const _this = this
       let value, time
       let fchange = false
       let cchange = false
@@ -716,7 +720,7 @@ export default {
           this.comFunction(v, value, fchange, cchange)
           if (fchange && value === '0') {
             data = {
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
               useredId: f.userId,
               recordId: f.recordId,
               favorite: '1',
@@ -728,7 +732,7 @@ export default {
             })
           } else if (cchange && value === '0') {
             data = {
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
               useredId: f.userId,
               recordId: f.recordId,
               collect: '1',
@@ -746,7 +750,7 @@ export default {
               noticeCotent: '点赞',
               favorite: '1',
               recordId: f.recordId,
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
             }
             request({
               url: '/addNotice',
@@ -761,7 +765,7 @@ export default {
               noticeCotent: '收藏',
               collect: '1',
               recordId: f.recordId,
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
             }
             request({
               url: '/addNotice',
@@ -782,7 +786,7 @@ export default {
             favoriteTime:
               fchange && value === '1' ? time : '0000-00-00 00:00:00',
             recordId: f.recordId,
-            userId: getApp().globalData.$userId || get_userId(),
+            userId: _this.userId,
           },
         }).then((v) => {
           this.comFunction(v, value, fchange, cchange)
@@ -794,7 +798,7 @@ export default {
               noticeCotent: '点赞',
               favorite: '1',
               recordId: f.recordId,
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
             }
           } else if (cchange && value === '1') {
             data = {
@@ -804,7 +808,7 @@ export default {
               noticeCotent: '收藏',
               collect: '1',
               recordId: f.recordId,
-              userId: getApp().globalData.$userId || get_userId(),
+              userId: _this.userId,
             }
           }
           request({
@@ -835,13 +839,14 @@ export default {
     },
     shareRecord(record) {},
     triggerFab(e) {
+      const _this = this
       if (e.item.text === '点赞') {
         uni.navigateTo({
-          url: '/pages/favorites/favorites?type=like',
+          url: `/pages/favorites/favorites?id=${_this.userId}&type=like`,
         })
       } else if (e.item.text === '收藏') {
         uni.navigateTo({
-          url: '/pages/favorites/favorites?type=collect',
+          url: `/pages/favorites/favorites?id=${_this.userId}&type=collect`,
         })
       } else if (e.item.text === '好友') {
         uni.navigateTo({
@@ -855,9 +860,9 @@ export default {
         this.inputText = ''
         this.imgLength = 0
         this.inputTextLength = 0
-      }else if(e.item.text === '消息'){
+      } else if (e.item.text === '消息') {
         uni.navigateTo({
-          url:'/pages/message/message'
+          url: '/pages/message/message',
         })
       }
     },

@@ -73,12 +73,12 @@ import { request, BASE_URL } from '../../utils/request'
 import { get_userId } from '../../utils/storage'
 export default {
   data() {
-    this.baseUrl = `${BASE_URL}/static/`
     return {
       userInfo: {},
       userId: 0,
       mCount: 0,
       fCount: 0,
+      baseUrl: `${BASE_URL}/static/`,
       ownId: getApp().globalData.$userId || get_userId(),
       collects: [],
       favorites: [],

@@ -72,7 +72,6 @@ export default {
               code: loginRes.code,
             },
             success: (res) => {
-              console.log(res)
               uni.hideLoading()
             },
           })

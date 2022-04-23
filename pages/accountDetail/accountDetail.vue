@@ -78,9 +78,9 @@ import { commonWays } from '../../utils/common'
 import { request, BASE_URL } from '../../utils/request'
 export default {
   data() {
-    this.baseUrl = `${BASE_URL}/static/`
     return {
       showPop: false,
+      baseUrl: `${BASE_URL}/static/`,
       imageUrl: '',
       popTitle: '',
       showName: '',

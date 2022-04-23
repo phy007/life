@@ -94,9 +94,6 @@ export default {
             })
           }
         })
-        .catch((r) => {
-          console.log(r)
-        })
     },
     chooseIcon(i) {
       this.addIcon.iconTypeId = i[0]

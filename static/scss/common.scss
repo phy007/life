@@ -169,7 +169,9 @@
   }
   .p-info-right {
     text-align: right;
+    // #ifdef H5
     padding-right: 15px;
+    // #endif
     flex: 1;
     color: #e8e;
   }

@@ -282,7 +282,6 @@ export default {
         sourceType: ['album', 'camera'], //album 从相册选图,camera 使用相机
         success(res) {
           let tempFilePath = res.tempFilePaths[0]
-          console.log(tempFilePath);
           // 将选择的图片上传服务器
           uni.uploadFile({
             // #ifdef H5

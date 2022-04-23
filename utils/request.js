@@ -1,6 +1,7 @@
 //运行小程序模式时，需配置完整的url，统一处理请求头、错误情况
 import { get_token } from './storage'
 import { commonWays } from './common'
+// export const BASE_URL = 'http://192.168.137.1:3001'
 export const BASE_URL = 'http://localhost:3001'
 
 export const request = (options) => {

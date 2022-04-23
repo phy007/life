@@ -32,20 +32,17 @@
     </view>
     <text class="f-box">all</text>
     <template v-if="friendsList.length">
-      <view
-        class="f-friItem"
-        v-for="(f, i) in friendsList"
-        :key="i"
-        @click="jumpToProfilePage(f.friendId)"
-      >
-        <image
-          :src="
-            f.image ? `${baseUrl}${f.image}` : '/static/img/defaultuser.png'
-          "
-        ></image>
-        <view class="f-friMain">
-          <text>{{ f.userName }}</text>
-          <text v-if="f.remark" class="f-remark">{{ f.remark }}</text>
+      <view class="f-friItem" v-for="(f, i) in friendsList" :key="i">
+        <view class="f-friLeft" @click="jumpToProfilePage(f.friendId)">
+          <image
+            :src="
+              f.image ? `${baseUrl}${f.image}` : '/static/img/defaultuser.png'
+            "
+          ></image>
+          <view class="f-friLMain">
+            <text>{{ f.userName }}</text>
+            <text v-if="f.remark" class="f-remark">{{ f.remark }}</text>
+          </view>
         </view>
         <text @click="remark(f)" class="f-addremark">备注</text>
       </view>
@@ -138,9 +135,6 @@ export default {
     },
     clear() {
       this.showFilterBox = false
-    },
-    bindClick(e) {
-      console.log('点击item，返回数据' + JSON.stringify(e))
     },
     addFriend() {
       this.showPop = true
@@ -284,22 +278,28 @@ export default {
   display: flex;
   align-items: center;
   border-bottom: 1px solid #ebebeb;
+  .f-friLeft {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    image {
+      width: 36px;
+      height: 36px;
+      margin-right: 7px;
+    }
+    .f-friLMain {
+      display: inline-block;
+      .f-remark {
+        color: #b4b3b3;
+        font-size: 14px;
+        display: block;
+      }
+    }
+  }
   .uni-icons {
     margin-right: 5px;
   }
-  image {
-    width: 36px;
-    height: 36px;
-    margin-right: 7px;
-  }
-  .f-friMain {
-    flex: 1;
-  }
-  .f-remark {
-    color: #b4b3b3;
-    font-size: 14px;
-    display: block;
-  }
+
   .f-addremark {
     font-size: 14px;
     width: 30px;

@@ -64,10 +64,10 @@ import { get_userId } from '../../utils/storage'
 
 export default {
   data() {
-    this.baseUrl = `${BASE_URL}/static/`
     return {
       userInfo: {},
       userId: getApp().globalData.$userId || get_userId(),
+      baseUrl: `${BASE_URL}/static/`,
       mCount: 0,
       fCount: 0,
       showType: 0,
@@ -156,10 +156,11 @@ export default {
   margin-bottom: 10px;
   view {
     width: 25%;
+    display: flex;
+    justify-content: center;
     text {
       display: block;
       margin-top: 5px;
-      text-align: center;
     }
   }
 }
