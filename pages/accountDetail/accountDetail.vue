@@ -82,7 +82,6 @@ export default {
     return {
       showPop: false,
       imageUrl: '',
-      userInfo: {},
       popTitle: '',
       showName: '',
       showEmail: '',
@@ -106,30 +105,30 @@ export default {
           value: 0,
         },
       ],
-      updateInfo: false,
     }
   },
   onLoad(e) {
     this.userId = e.id
     this.getUser()
-
   },
   methods: {
     getUser() {
+      const _this = this
       request({
         url: '/getUser',
         data: { userId: this.userId },
       }).then((v) => {
-        const { statusCode } = v
-        const { code, data } = v.data
-        if (statusCode === 200) {
-          if (code === 1 && data.length) {
-            this.imageUrl = data[0].image
-            this.showName = data[0].userName
-            this.showEmail = data[0].email
-            this.single = commonWays.formatDate(data[0].birthdate)
-            this.phone = data[0].phone
-            this.checkedSex = Number(data[0].gender)
+        const data = v.data
+        if (v.statusCode === 200) {
+          if (data.length) {
+            _this.imageUrl = data[0].image
+            _this.showName = data[0].userName
+            _this.showEmail = data[0].email
+            _this.single = commonWays.formatDate(data[0].birthdate)
+            _this.phone = data[0].phone
+            _this.checkedSex = Number(data[0].gender)
+          } else {
+            commonWays.toast('加载失败')
           }
         }
       })
@@ -138,16 +137,13 @@ export default {
       if (!this.errorInput) {
         if (this.inputType === 1) {
           if (this.showName !== this.inputText) {
-            // 用户未更改不调用接口更新后台数据
             this.showName = this.inputText
-            this.updateInfo = true
-            this.userInfo.userName = this.inputText
+            this.updateUser({ userId: this.userId, userName: this.inputText })
           }
         } else {
           if (this.showEmail !== this.inputText) {
             this.showEmail = this.inputText
-            this.userInfo.email = this.inputText
-            this.updateInfo = true
+            this.updateUser({ userId: this.userId, email: this.inputText })
           }
         }
         this.showPop = false
@@ -208,10 +204,8 @@ export default {
                 } else if (code == -2) {
                   commonWays.toast(message)
                 } else {
-                  _this.imageUrl = message
-                  // 插入message于user表中
-                  _this.userInfo.image = message
-                  _this.updateInfo = true
+                  _this.updateUser({ userId: _this.userId, image: message })
+                  _this.getUser()
                 }
               }
             },
@@ -219,10 +213,20 @@ export default {
         },
       })
     },
+    updateUser(data) {
+      request({
+        url: '/updateUser',
+        data,
+        method: 'POST',
+      }).then((v) => {
+        if (v.statusCode === 200) {
+          commonWays.toast(v.data)
+        }
+      })
+    },
     checkDate(e) {
       this.single = e
-      this.userInfo.birthdate = e
-      this.updateInfo = true
+      this.updateUser({ userId: this.userId, birthdate: e })
     },
     editName() {
       this.inputText = this.showName
@@ -237,26 +241,9 @@ export default {
       this.inputType = 2
     },
     changeSex(e) {
-      this.userInfo.gender = e.detail.value
-      this.updateInfo = true
+      this.checkedSex = e.detail.value
+      this.updateUser({ userId: this.userId, gender: `${e.detail.value}` })
     },
-  },
-  onUnload() {
-    if (this.updateInfo) {
-      request({
-        url: '/updateUser',
-        method: 'POST',
-        data: { id: this.userId, userInfo: this.userInfo },
-      }).then((v) => {
-        const { statusCode } = v
-        const { code, message } = v.data
-        if (statusCode === 200) {
-          if (!code) {
-            commonWays.toast(message)
-          }
-        }
-      })
-    }
   },
 }
 </script>
