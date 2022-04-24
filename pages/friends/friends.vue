@@ -32,7 +32,12 @@
     </view>
     <text class="f-box">all</text>
     <template v-if="friendsList.length">
-      <view class="f-friItem" v-for="(f, i) in friendsList" :key="i">
+      <view
+        class="f-friItem"
+        v-for="(f, i) in friendsList"
+        :key="i"
+        @longpress="longtap(f.id)"
+      >
         <view class="f-friLeft" @click="jumpToProfilePage(f.friendId)">
           <image
             :src="
@@ -114,7 +119,8 @@ export default {
         },
       }).then((v) => {
         if (v.statusCode) {
-          _this.friendsList = v.data
+          _this.friendsList = v.data.friends
+          _this.phonesList = v.data.phones
         }
       })
     },
@@ -150,12 +156,16 @@ export default {
     verifyPhone() {
       let phone = this.inputPhone
       let reg = /^[1][3,4,5,7,8][0-9]{9}$/
+      this.checkVerify = true
       const _this = this
       if (phone === '') {
         this.errorText = '不能为空'
         this.isErrorInput = true
       } else if (!reg.test(phone)) {
         this.errorText = '输入不合法'
+        this.isErrorInput = true
+      } else if (this.phonesList.indexOf(phone) !== -1) {
+        this.errorText = '已添加该好友'
         this.isErrorInput = true
       } else {
         // 查询user表中合法的phone是否存在，存在发送请求成功，不存在报错，重新输入
@@ -172,7 +182,6 @@ export default {
             } else if (v.data.userId != _this.userId && v.data) {
               _this.errorText = ''
               _this.isErrorInput = false
-              _this.checkVerify = true
               _this.friendId = v.data.userId
             } else {
               _this.errorText = '号码不存在'
@@ -187,7 +196,7 @@ export default {
       if (this.showPopChannel === 'add') {
         if (this.checkVerify) {
           if (this.isErrorInput) {
-            commonWays.toast('输入不合法，请重新输入')
+            commonWays.toast(`${this.errorText}，请重新输入`)
           } else {
             request({
               url: '/addNotice',
@@ -242,6 +251,30 @@ export default {
       this.errorText = ''
       this.inputText = ''
       commonWays.toast('cancel operation')
+    },
+    longtap(id) {
+      const _this = this
+      uni.showModal({
+        title: '提示',
+        content: `是否删除该好友？`,
+        success: function (res) {
+          if (res.confirm) {
+            request({
+              url: '/delFriends',
+              data: {
+                id,
+              },
+            }).then((v) => {
+              if (v.statusCode === 200) {
+                _this.getFriendsList()
+                commonWays.toast('删除成功')
+              }
+            })
+          } else if (res.cancel) {
+            commonWays.toast('cancel operation')
+          }
+        },
+      })
     },
   },
 }

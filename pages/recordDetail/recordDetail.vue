@@ -8,9 +8,7 @@
         mode="widthFix"
       ></image>
       <view>
-        <text @click="jumpToProfilePage(record.userId)">{{
-          record.userName
-        }}</text>
+        <text @click="jumpToProfilePage(record.userId)">{{ userName }}</text>
         <text>{{ record.time | formatTime }}</text>
       </view>
     </view>
@@ -88,16 +86,18 @@
     <view v-if="commentList.length" class="r-commentBox">
       <view class="r-comItem" v-for="(c, cindex) in commentList" :key="cindex">
         <view>
-          <image
-            :src="
-              c.userImage
-                ? `${baseUrl}${c.userImage}`
-                : '/static/img/defaultuser.png'
-            "
-          ></image>
-          <text class="r-comName" @click="jumpToProfilePage(c.commentUserId)"
-            >{{ c.username }}：</text
-          >
+          <view class="r-userName">
+            <image
+              :src="
+                c.userImage
+                  ? `${baseUrl}${c.userImage}`
+                  : '/static/img/defaultuser.png'
+              "
+            ></image>
+            <text class="r-comName" @click="jumpToProfilePage(c.commentUserId)"
+              >{{ c.username }}：</text
+            >
+          </view>
           <text>{{ c.content }}</text>
           <uni-icons
             :type="c.username === ownUserName ? 'close' : 'chatbubble'"
@@ -111,16 +111,18 @@
               v-for="(r, rindex) in replyList[cindex]"
               :key="rindex"
             >
-              <image
-                :src="
-                  r.userImage
-                    ? `${baseUrl}${r.userImage}`
-                    : '/static/img/defaultuser.png'
-                "
-              ></image>
-              <text class="r-comName" @click="jumpToProfilePage(r.userId)"
-                >{{ r.userName }}：</text
-              >
+              <view class="r-userName">
+                <image
+                  :src="
+                    r.image
+                      ? `${baseUrl}${r.image}`
+                      : '/static/img/defaultuser.png'
+                  "
+                ></image>
+                <text class="r-comName" @click="jumpToProfilePage(r.userId)"
+                  >{{ r.userName }}：</text
+                >
+              </view>
               <text>{{ r.replyContent }}</text>
               <uni-icons
                 :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
@@ -174,12 +176,14 @@ export default {
   data() {
     return {
       userImage: '',
+      userName: '',
       commentList: [],
       replyList: [],
       ownUserName: '',
       baseUrl: `${BASE_URL}/static/`,
       type: '',
       record: {},
+      reply: {},
       collectCount: 0,
       favoriteCount: 0,
       showPop: false,
@@ -208,7 +212,9 @@ export default {
       }).then((v) => {
         if (v.statusCode === 200) {
           _this.record = v.data.recordInfo
+          _this.userName = v.data.userName
           _this.userImage = v.data.userImage
+          console.log(v.data)
           if (_this.type === 'own') {
             _this.getColAndFavCount(v.data.recordId)
           }
@@ -269,7 +275,6 @@ export default {
             content: _this.showPopText,
             recordId: _this.record.recordId,
             commentUserId: _this.userId,
-            userName: _this.ownUserName,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
@@ -282,12 +287,12 @@ export default {
           url: '/addReply',
           method: 'POST',
           data: {
-            commentId: _this.replyCommentId,
+            recordId: _this.record.recordId,
+            commentId: _this.reply.replyCommentId,
             replyContent: _this.showPopText,
             replyDate: commonWays.currentDate(),
-            userName: _this.ownUserName,
             userId: _this.userId,
-            repliedUserName: _this.repliedUserName,
+            repliedUserId: _this.reply.repliedUserId,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
@@ -331,8 +336,12 @@ export default {
         // 添加回复，根据评论id
         _this.showPop = true
         _this.showPopChannel = false
-        _this.replyCommentId = cId
-        _this.repliedUserName = obj.userName || obj.username
+        _this.reply = {
+          replyCommentId: cId,
+          repliedUserName: obj.userName || obj.username,
+          repliedUserId: obj.commentUserId,
+        }
+        console.log(obj)
       }
     },
     addNotice(commentId, replyId, text) {
@@ -584,6 +593,10 @@ export default {
       .r-comName {
         color: #d5067c;
         font-weight: bold;
+      }
+      .r-userName {
+        display: inline-flex;
+        align-items: center;
       }
       .r-replyMain {
         margin-left: 20px;

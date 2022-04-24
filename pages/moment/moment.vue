@@ -19,7 +19,7 @@
               <uni-list>
                 <uni-list-item
                   :to="`/pages/profile/profile?id=${o.userId}`"
-                  :title="o.userName"
+                  :title="ownUserName"
                 />
                 <text class="m-time">{{ o.time | formatTime }}</text>
               </uni-list>
@@ -334,10 +334,8 @@ export default {
         data: { userId: _this.userId },
       }).then((v) => {
         if (v.statusCode === 200) {
-          _this.ownUserName = v.data.ownRecord[0].userName
+          _this.ownUserName = v.data.userName
           _this.ownList = v.data.ownRecord
-          _this.ownName = v.data.ownRecord[0].userName
-          _this.power = v.data.ownRecord[0].power
         }
       })
     },
@@ -350,6 +348,8 @@ export default {
         if (v.statusCode === 200) {
           _this.firList = v.data.friRecord
           _this.commentandreplyList = v.data.commentsAndReplys
+          console.log(v.data.friRecord)
+          console.log(v.data.commentsAndReplys)
         }
       })
     },
@@ -546,7 +546,7 @@ export default {
           request({
             url: '/addRecord',
             data: {
-              userName: this.ownName,
+              userName: this.ownUserName,
               userId: _this.userId,
               recordText: this.inputText,
               recordImage: imgStr,
