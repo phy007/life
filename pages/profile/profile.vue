@@ -186,6 +186,7 @@ export default {
       text:first-child {
         overflow: hidden;
         text-overflow: ellipsis;
+        overflow-y: scroll;
         height: 82px;
         outline: 1px solid #7950ea;
         border-radius: 5px;

@@ -36,10 +36,24 @@
               o.recordText
             }}</text>
             <view slot="actions" class="card-actions">
-              <view class="card-actions-item" @click="shareRecord(o)">
-                <uni-icons type="paperplane" size="20" color="#999"></uni-icons>
+              <!-- #ifdef MP-WEIXIN -->
+              <view class="card-actions-item">
+                <button open-type="share" @click="shareRecord(o.recordId)">
+                  <uni-icons
+                    type="paperplane"
+                    size="24"
+                    color="#999"
+                  ></uni-icons>
+                  <text class="card-actions-item-text">分享</text>
+                </button>
+              </view>
+              <!-- #endif -->
+              <!-- #ifdef H5 -->
+              <view class="card-actions-item" @click="share">
+                <uni-icons type="paperplane" size="24" color="#999"></uni-icons>
                 <text class="card-actions-item-text">分享</text>
               </view>
+              <!-- #endif -->
               <view class="card-actions-item" @click="editRecord(o)">
                 <uni-icons type="compose" size="20" color="#999"></uni-icons>
                 <text class="card-actions-item-text">编辑</text>
@@ -173,7 +187,7 @@
               v-for="(c, cindex) in commentandreplyList[i]"
               :key="cindex"
             >
-              <view>
+              <view class="com-commentItem">
                 <text
                   @click="jumpToProfilePage(c.commentUserId)"
                   class="m-comName"
@@ -186,29 +200,31 @@
                   color="#999"
                   @click="handleReply(c, c.commentId)"
                 ></uni-icons>
-                <template v-if="c.replys">
-                  <view v-for="(r, rindex) in c.replys" :key="rindex">
-                    <view class="m-comName"
-                      ><text @click="jumpToProfilePage(r.userId)">{{
-                        r.userName
-                      }}</text
-                      >回复<text @click="jumpToProfilePage(r.repliedUserId)">{{
-                        r.repliedUserName
-                      }}</text
-                      >：</view
-                    >
-                    <text class="m-comMain">{{ r.replyContent }}</text>
-                    <uni-icons
-                      :type="
-                        r.userName === ownUserName ? 'close' : 'chatbubble'
-                      "
-                      size="15"
-                      color="#999"
-                      @click="handleReply(r, c.commentId)"
-                    ></uni-icons>
-                  </view>
-                </template>
               </view>
+              <template v-if="c.replys">
+                <view
+                  v-for="(r, rindex) in c.replys"
+                  :key="rindex"
+                  class="com-commentItem"
+                >
+                  <view class="m-comName"
+                    ><text @click="jumpToProfilePage(r.userId)">{{
+                      r.userName
+                    }}</text
+                    >回复<text @click="jumpToProfilePage(r.repliedUserId)">{{
+                      r.repliedUserName
+                    }}</text
+                    >：</view
+                  >
+                  <text class="m-comMain">{{ r.replyContent }}</text>
+                  <uni-icons
+                    :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
+                    size="15"
+                    color="#999"
+                    @click="handleReply(r, c.commentId)"
+                  ></uni-icons>
+                </view>
+              </template>
             </view>
           </view>
         </uni-card>
@@ -325,6 +341,12 @@ export default {
   },
   onShow() {
     this.getNoticeData()
+    //这是设置右上角的三个点点击后是否可以分享给微信好友，或朋友圈
+    wx.showShareMenu({
+      withShareTicket: true,
+      //设置下方的Menus菜单，才能够让发送给朋友与分享到朋友圈两个按钮可以点击
+      menus: ['shareAppMessage'],
+    })
   },
   methods: {
     getOwnData() {
@@ -376,6 +398,31 @@ export default {
           }
         }
       })
+    },
+    // 分享好友
+    onShareAppMessage(options) {
+      const _this = this
+      let shareObj = {
+        title: 'RecordDaily',
+        path: `/pages/recordDetail/recordDetail?id=${_this.sharerecordId}`,
+        success: (res) => {
+          if (res.errMsg == 'shareAppMessage:ok') {
+            commonWays.toast('分享成功')
+          }
+        },
+        fail: (res) => {
+          if (res.errMsg == 'shareAppMessage:fail cancel') {
+            commonWays.toast('取消分享')
+          } else if (res.errMsg == 'shareAppMessage:fail') {
+            console.log(res)
+            commonWays.toast('分享失败')
+          }
+        },
+      }
+      if (options.from === 'button') {
+        console.log('button触发转发给朋友')
+      }
+      return shareObj
     },
     jumpToProfilePage(id) {
       commonWays.jumpToProfilePage(id)
@@ -594,7 +641,6 @@ export default {
             content: _this.showPopText,
             recordId: _this.recordInfo.recordId,
             commentUserId: _this.userId,
-            userName: _this.ownUserName,
           },
         }).then((v) => {
           if (v.statusCode === 200) {
@@ -837,7 +883,9 @@ export default {
       }
       this.showEditBox = false
     },
-    shareRecord(record) {},
+    shareRecord(id) {
+      this.sharerecordId = id
+    },
     triggerFab(e) {
       const _this = this
       if (e.item.text === '点赞') {
@@ -875,6 +923,20 @@ export default {
 
 <style lang="scss" scoped>
 @import '../../static/scss/common.scss';
+// #ifdef MP-WEIXIN
+button::after {
+  border: none;
+}
+button {
+  background-color: #fff;
+  height: 30px;
+  line-height: 30px;
+  padding: 0;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+}
+// #endif
 .m-box {
   // #ifdef MP-WEIXIN
   padding-top: 15px;

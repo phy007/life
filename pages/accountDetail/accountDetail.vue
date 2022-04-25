@@ -61,7 +61,7 @@
         <text>{{ popTitle }}</text>
         <input
           type="text"
-          :placeholder="inputType === 1 ? '4-16位数字中文英文字母' : '填写邮箱'"
+          :placeholder="inputType === 1 ? '2-6位数字中文英文字母' : '填写邮箱'"
           v-model="inputText"
           @blur="verifyInput"
           auto-focus
@@ -162,7 +162,7 @@ export default {
     verifyInput() {
       let re
       if (this.inputType === 1) {
-        re = /^[\u4e00-\u9fa50-9a-zA-Z]{4,16}$/
+        re = /^[\u4e00-\u9fa50-9a-zA-Z]{2,6}$/
       } else if (this.inputType === 2) {
         re = /^[A-Za-z0-9-_\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
       }
@@ -269,7 +269,7 @@ export default {
     height: auto;
     display: flex;
     align-items: center;
-    justify-content: right;
+    justify-content: flex-end;
     text-align: right;
     position: relative;
     .datePicker {

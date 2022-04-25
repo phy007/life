@@ -52,6 +52,10 @@
           ></uni-icons>
           <text>{{ collectCount }}</text>
         </view>
+        <view @click="addComment">
+          <uni-icons type="chatbubble" size="24" color="#999"></uni-icons>
+          <text>评论</text>
+        </view>
       </template>
 
       <template v-else>
@@ -77,17 +81,28 @@
         </view>
       </template>
 
+      <!-- #ifdef MP-WEIXIN -->
       <view>
+        <button open-type="share">
+          <uni-icons type="paperplane" size="24" color="#999"></uni-icons>
+          <text>分享</text>
+        </button>
+      </view>
+      <!-- #endif -->
+      <!-- #ifdef H5 -->
+      <view @click="share">
         <uni-icons type="paperplane" size="24" color="#999"></uni-icons>
         <text>分享</text>
       </view>
+      <!-- #endif -->
     </view>
 
     <view v-if="commentList.length" class="r-commentBox">
       <view class="r-comItem" v-for="(c, cindex) in commentList" :key="cindex">
-        <view>
+        <view class="com-commentItem">
           <view class="r-userName">
             <image
+              mode="widthFix"
               :src="
                 c.userImage
                   ? `${baseUrl}${c.userImage}`
@@ -105,34 +120,35 @@
             color="#999"
             @click="handleReply(c, c.commentId)"
           ></uni-icons>
-          <template v-if="replyList[cindex].length">
-            <view
-              class="r-replyMain"
-              v-for="(r, rindex) in replyList[cindex]"
-              :key="rindex"
-            >
-              <view class="r-userName">
-                <image
-                  :src="
-                    r.image
-                      ? `${baseUrl}${r.image}`
-                      : '/static/img/defaultuser.png'
-                  "
-                ></image>
-                <text class="r-comName" @click="jumpToProfilePage(r.userId)"
-                  >{{ r.userName }}：</text
-                >
-              </view>
-              <text>{{ r.replyContent }}</text>
-              <uni-icons
-                :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
-                size="20"
-                color="#999"
-                @click="handleReply(r, c.commentId)"
-              ></uni-icons>
-            </view>
-          </template>
         </view>
+        <template v-if="replyList[cindex].length">
+          <view
+            v-for="(r, rindex) in replyList[cindex]"
+            :key="rindex"
+            class="com-commentItem r-replyMain"
+          >
+            <view class="r-userName">
+              <image
+                mode="widthFix"
+                :src="
+                  r.image
+                    ? `${baseUrl}${r.image}`
+                    : '/static/img/defaultuser.png'
+                "
+              ></image>
+              <text class="r-comName" @click="jumpToProfilePage(r.userId)"
+                >{{ r.userName }}：</text
+              >
+            </view>
+            <text>{{ r.replyContent }}</text>
+            <uni-icons
+              :type="r.userName === ownUserName ? 'close' : 'chatbubble'"
+              size="20"
+              color="#999"
+              @click="handleReply(r, c.commentId)"
+            ></uni-icons>
+          </view>
+        </template>
       </view>
     </view>
 
@@ -196,10 +212,19 @@ export default {
   onLoad(e) {
     this.recordId = e.id
     this.type = e.type
-    this.ownUserName = get_userName()
+    this.ownUserName = get_userName() || ''
     this.getRecord(e.id)
     this.getCommentData(e.id)
   },
+  onShow() {
+    //这是设置右上角的三个点点击后是否可以分享给微信好友，或朋友圈
+    wx.showShareMenu({
+      withShareTicket: true,
+      //设置下方的Menus菜单，才能够让发送给朋友与分享到朋友圈两个按钮可以点击
+      menus: ['shareAppMessage'],
+    })
+  },
+
   methods: {
     getRecord(id) {
       const _this = this
@@ -249,6 +274,32 @@ export default {
         }
       })
     },
+    // 分享好友
+    onShareAppMessage(options) {
+      const _this = this
+      let shareObj = {
+        title: 'RecordDaily',
+        path: `/pages/recordDetail/recordDetail?id=${_this.recordId}&type=own`,
+        success: (res) => {
+          if (res.errMsg == 'shareAppMessage:ok') {
+            commonWays.toast('分享成功')
+          }
+        },
+        fail: (res) => {
+          if (res.errMsg == 'shareAppMessage:fail cancel') {
+            commonWays.toast('取消分享')
+          } else if (res.errMsg == 'shareAppMessage:fail') {
+            console.log(res)
+            commonWays.toast('分享失败')
+          }
+        },
+      }
+      if (options.from === 'button') {
+        console.log('button触发转发给朋友')
+      }
+      return shareObj
+    },
+    share() {},
     jumpToProfilePage(id) {
       commonWays.jumpToProfilePage(id)
     },
@@ -346,22 +397,25 @@ export default {
     },
     addNotice(commentId, replyId, text) {
       const _this = this
-      request({
-        url: '/addNotice',
-        method: 'POST',
-        data: {
-          type: '2',
-          useredId: _this.record.userId,
-          recordId: _this.record.recordId,
-          dateTime: commonWays.currentDate(),
-          noticeCotent: _this.showPopChannel
-            ? `评论：${text}`
-            : `回复：${text}`,
-          commentId,
-          replyId,
-          userId: _this.userId,
-        },
-      })
+      /* 自己给自己评论回复不通知 */
+      if (this.record.userId !== this.userId) {
+        request({
+          url: '/addNotice',
+          method: 'POST',
+          data: {
+            type: '2',
+            useredId: _this.record.userId,
+            recordId: _this.record.recordId,
+            dateTime: commonWays.currentDate(),
+            noticeCotent: _this.showPopChannel
+              ? `评论：${text}`
+              : `回复：${text}`,
+            commentId,
+            replyId,
+            userId: _this.userId,
+          },
+        })
+      }
     },
     selectLike(f, t) {
       const _this = this
@@ -518,6 +572,20 @@ export default {
 
 <style lang="scss" scoped>
 @import '../../static/scss/common.scss';
+// #ifdef MP-WEIXIN
+button::after {
+  border: none;
+}
+button {
+  background-color: #fff;
+  height: 30px;
+  line-height: 30px;
+  padding: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+// #endif
 .r-box {
   padding-bottom: 20px;
   .r-personBox {
@@ -572,6 +640,7 @@ export default {
     display: flex;
     justify-content: flex-end;
     margin-right: 20px;
+    font-size: 18px;
     view {
       margin-left: 10px;
       display: flex;
@@ -595,17 +664,18 @@ export default {
         font-weight: bold;
       }
       .r-userName {
-        display: inline-flex;
+        display: flex;
+        flex-wrap: nowrap;
         align-items: center;
+        min-width: 80px;
+        image {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+        }
       }
       .r-replyMain {
         margin-left: 20px;
-      }
-      image {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        margin: 0 3px;
       }
     }
   }
