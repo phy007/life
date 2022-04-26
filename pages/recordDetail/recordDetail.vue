@@ -217,12 +217,14 @@ export default {
     this.getCommentData(e.id)
   },
   onShow() {
+    // #ifdef MP-WEIXI
     //这是设置右上角的三个点点击后是否可以分享给微信好友，或朋友圈
     wx.showShareMenu({
       withShareTicket: true,
       //设置下方的Menus菜单，才能够让发送给朋友与分享到朋友圈两个按钮可以点击
       menus: ['shareAppMessage'],
     })
+    // #endif
   },
 
   methods: {
@@ -239,10 +241,10 @@ export default {
           _this.record = v.data.recordInfo
           _this.userName = v.data.userName
           _this.userImage = v.data.userImage
-          console.log(v.data)
           if (_this.type === 'own') {
             _this.getColAndFavCount(v.data.recordId)
           }
+          console.log(v.data)
         }
       })
     },
@@ -257,6 +259,7 @@ export default {
         if (v.statusCode === 200) {
           _this.commentList = v.data.comments
           _this.replyList = v.data.replys
+          console.log(v.data)
         }
       })
     },
@@ -299,7 +302,19 @@ export default {
       }
       return shareObj
     },
-    share() {},
+    share() {
+      const _this = this
+      uni.setClipboardData({
+        data: `http://localhost:8080/#/pages/recordDetail/recordDetail?id=${_this.record.recordId}&type=${_this.type}`,
+        success: (res) => {
+          console.log(res)
+          commonWays.toast('分享链接复制到剪切板了，快去分享吧！')
+        },
+        fail: () => {
+          commonWays.toast('复制失败，请重新操作')
+        },
+      })
+    },
     jumpToProfilePage(id) {
       commonWays.jumpToProfilePage(id)
     },

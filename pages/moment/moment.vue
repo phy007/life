@@ -49,7 +49,7 @@
               </view>
               <!-- #endif -->
               <!-- #ifdef H5 -->
-              <view class="card-actions-item" @click="share">
+              <view class="card-actions-item" @click="share(o.recordId)">
                 <uni-icons type="paperplane" size="24" color="#999"></uni-icons>
                 <text class="card-actions-item-text">分享</text>
               </view>
@@ -341,12 +341,14 @@ export default {
   },
   onShow() {
     this.getNoticeData()
+    // #ifdef MP-WEIXI
     //这是设置右上角的三个点点击后是否可以分享给微信好友，或朋友圈
     wx.showShareMenu({
       withShareTicket: true,
       //设置下方的Menus菜单，才能够让发送给朋友与分享到朋友圈两个按钮可以点击
       menus: ['shareAppMessage'],
     })
+    // #endif
   },
   methods: {
     getOwnData() {
@@ -423,6 +425,18 @@ export default {
         console.log('button触发转发给朋友')
       }
       return shareObj
+    },
+    share(id) {
+      uni.setClipboardData({
+        data: `http://localhost:8080/#/pages/recordDetail/recordDetail?id=${id}&type=own`,
+        success: (res) => {
+          console.log(res)
+          commonWays.toast('分享链接复制到剪切板了，快去分享吧！')
+        },
+        fail: () => {
+          commonWays.toast('复制失败，请重新操作')
+        },
+      })
     },
     jumpToProfilePage(id) {
       commonWays.jumpToProfilePage(id)
