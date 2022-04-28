@@ -35,6 +35,23 @@
             <text @click="jumpNextPage(o, 'own')" class="uni-body">{{
               o.recordText
             }}</text>
+            <!-- bill区域 -->
+            <view v-if="o.bill.length" class="m-billItem billItem">
+              <image
+                mode="widthFix"
+                :src="`../../static/img/icon/${o.bill[0].iconUrl}`"
+              ></image>
+              <view class="bITitle">
+                <template v-if="o.bill[0].remark !== ''">
+                  <text>{{ o.bill[0].title }}</text>
+                  <text class="b-mITsubtilte">{{ o.bill[0].remark }}</text>
+                </template>
+                <text v-else>{{ o.bill[0].title }}</text>
+              </view>
+              <text class="bIMoney">{{
+                o.bill[0].type === 0 ? -o.bill[0].money : o.bill[0].money
+              }}</text>
+            </view>
             <view slot="actions" class="card-actions">
               <!-- #ifdef MP-WEIXIN -->
               <view class="card-actions-item">
@@ -68,7 +85,7 @@
 
         <!-- 编辑区 -->
         <view v-else class="showEdit">
-          <text>{{ showEditTitle }}</text>
+          <text class="showEditTitle">{{ showEditTitle }}</text>
           <view class="inputBox">
             <textarea
               v-model="inputText"
@@ -115,6 +132,46 @@
               ></image>
             </view>
           </view>
+          <view class="billBox">
+            <view class="bBdateText">选择需要记录的账单：</view>
+            <uni-datetime-picker
+              type="date"
+              :clear-icon="false"
+              v-model="single"
+              @change="changeDate"
+            />
+            <template v-if="billDataList.length">
+              <radio-group @change="radioChange">
+                <label
+                  class="billItem"
+                  v-for="(b, bi) in billDataList"
+                  :key="bi"
+                >
+                  <radio :value="`${b.billId}`" />
+                  <image
+                    mode="widthFix"
+                    :src="`../../static/img/icon/${b.iconUrl}`"
+                  ></image>
+                  <view class="bITitle">
+                    <template v-if="b.remark !== ''">
+                      <text>{{ b.title }}</text>
+                      <text>{{ b.remark }}</text>
+                    </template>
+                    <text v-else>{{ b.title }}</text>
+                  </view>
+                  <text class="bIMoney">{{
+                    b.type === 0 ? -b.money : b.money
+                  }}</text>
+                </label>
+              </radio-group>
+            </template>
+            <view
+              class="bINotFound"
+              v-else-if="single !== '' && !billDataList.length"
+            >
+              <text>{{ single }}没有账单，先去添加账单吧！</text>
+            </view>
+          </view>
           <view class="btnBox">
             <button class="com-button com-btn-red" @click="submitEdit">
               确认
@@ -136,7 +193,7 @@
         />
       </view>
       <view v-show="current === 1">
-        <uni-card v-for="(f, i) in firList" :key="i">
+        <uni-card v-for="(f, i) in friList" :key="i">
           <template v-slot:title>
             <uni-list>
               <uni-list-item
@@ -157,6 +214,22 @@
           <text @click="jumpNextPage(f, 'other')" class="uni-body">{{
             f.recordText
           }}</text>
+          <view v-if="f.bill.length" class="m-billItem billItem">
+            <image
+              mode="widthFix"
+              :src="`../../static/img/icon/${f.bill[0].iconUrl}`"
+            ></image>
+            <view class="bITitle">
+              <template v-if="f.bill[0].remark !== ''">
+                <text>{{ f.bill[0].title }}</text>
+                <text class="b-mITsubtilte">{{ f.bill[0].remark }}</text>
+              </template>
+              <text v-else>{{ f.bill[0].title }}</text>
+            </view>
+            <text class="bIMoney">{{
+              f.bill[0].type === 0 ? -f.bill[0].money : f.bill[0].money
+            }}</text>
+          </view>
           <view slot="actions" class="card-actions">
             <view class="card-actions-item" @click="addComment(f)">
               <uni-icons type="chatbubble" size="20" color="#999"></uni-icons>
@@ -283,9 +356,13 @@ export default {
       current: 0,
       ownUserName: '',
       ownList: [],
-      firList: [],
+      friList: [],
+      friIdArr: [],
       commentandreplyList: [],
+      billDataList: [],
+      billId: 0,
       noticeSum: 0,
+      single: '',
       showEditBox: false,
       showEditInfo: {},
       showEditTitle: '',
@@ -370,10 +447,10 @@ export default {
         data: { userId: _this.userId },
       }).then((v) => {
         if (v.statusCode === 200) {
-          _this.firList = v.data.friRecord
+          _this.friList = v.data.friRecord
+          _this.friIdArr = v.data.friIdArr
           _this.commentandreplyList = v.data.commentsAndReplys
-          console.log(v.data.friRecord)
-          console.log(v.data.commentsAndReplys)
+          console.log(v.data)
         }
       })
     },
@@ -438,6 +515,24 @@ export default {
         },
       })
     },
+    changeDate(e) {
+      this.single = e
+      const _this = this
+      request({
+        url: '/getBillBydate',
+        data: {
+          userId: _this.userId,
+          date: e,
+        },
+      }).then((v) => {
+        if (v.statusCode === 200) {
+          _this.billDataList = v.data
+        }
+      })
+    },
+    radioChange(e) {
+      this.billId = parseInt(e.detail.value)
+    },
     jumpToProfilePage(id) {
       commonWays.jumpToProfilePage(id)
     },
@@ -448,14 +543,16 @@ export default {
         content: '确认删除该记录吗？',
         success: function (res) {
           if (res.confirm) {
-            r.recordImage.split('&').forEach((e) => {
-              request({
-                url: '/delImg',
-                data: {
-                  filename: e,
-                },
+            if (r.recordImage !== '' && r.recordImage !== null) {
+              r.recordImage.split('&').forEach((e) => {
+                request({
+                  url: '/delImg',
+                  data: {
+                    filename: e,
+                  },
+                })
               })
-            })
+            }
             request({
               url: '/delRecord',
               data: {
@@ -464,6 +561,15 @@ export default {
             }).then((v) => {
               commonWays.toast(v.data)
               _this.getOwnData()
+            })
+            request({
+              url: '/delNoticeType5',
+              method: 'POST',
+              data: {
+                recordId: r.recordId,
+                userId: _this.userId,
+                type: '5',
+              },
             })
           } else if (res.cancel) {
             commonWays.toast('取消删除')
@@ -481,6 +587,10 @@ export default {
       this.inputText = this.showEditInfo.recordText
       this.inputTextLength = record.recordText.length
       this.tempImgArr = []
+      if (record.bill.length) {
+        this.billDataList = record.bill
+        this.billId = record.bill[0].billId
+      }
     },
     uploadImg() {
       let _this = this
@@ -590,6 +700,7 @@ export default {
               params: {
                 recordText: _this.inputText,
                 recordImage: imgStr,
+                billId: _this.billId,
               },
             },
             method: 'POST',
@@ -606,20 +717,33 @@ export default {
         if (!errImage && this.inputText) {
           request({
             url: '/addRecord',
-            data: {
-              userName: this.ownUserName,
-              userId: _this.userId,
-              recordText: this.inputText,
-              recordImage: imgStr,
-              power: this.power,
-              time: commonWays.currentDate(),
-            },
             method: 'POST',
+            data: {
+              userId: _this.userId,
+              recordText: _this.inputText,
+              recordImage: imgStr,
+              time: commonWays.currentDate(),
+              billId: _this.billId,
+            },
           }).then((v) => {
             if (v.statusCode === 200) {
-              commonWays.toast(v.data)
+              commonWays.toast('记录成功')
               _this.getOwnData()
               _this.showEditBox = false
+              request({
+                url: '/addNoticeType5',
+                method: 'POST',
+                data: {
+                  friIdArr: _this.friIdArr,
+                  noticeInfo: {
+                    type: '5',
+                    recordId: v.data[0],
+                    dateTime: commonWays.currentDate(),
+                    noticeCotent: '更新一条记录',
+                    userId: _this.userId,
+                  },
+                },
+              })
             } else {
               commonWays.toast('记录失败，重新编辑')
             }
@@ -670,9 +794,7 @@ export default {
             commentId: _this.replyCommentId,
             replyContent: _this.showPopText,
             replyDate: commonWays.currentDate(),
-            userName: _this.ownUserName,
             userId: _this.userId,
-            repliedUserName: _this.repliedUserName,
             recordId: _this.recordInfo.recordId,
           },
         }).then((v) => {
@@ -739,7 +861,6 @@ export default {
         _this.showPop = true
         _this.showPopChannel = false
         _this.replyCommentId = cId
-        _this.repliedUserName = obj.userName || obj.username
         _this.recordInfo = obj
       }
     },
@@ -922,6 +1043,7 @@ export default {
         this.inputText = ''
         this.imgLength = 0
         this.inputTextLength = 0
+        this.billDataList = []
       } else if (e.item.text === '消息') {
         uni.navigateTo({
           url: '/pages/message/message',
@@ -1042,7 +1164,7 @@ button {
     }
     .showEdit {
       padding: 10px;
-      text {
+      .showEditTitle {
         height: 30px;
         width: 100%;
         text-align: center;
@@ -1083,6 +1205,19 @@ button {
             top: -10px;
             right: -35px;
           }
+        }
+      }
+      .billBox {
+        margin-top: 15px;
+        .bBdateText {
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 7px;
+        }
+        .bINotFound {
+          text-align: center;
+          color: #e8e;
+          margin-top: 5px;
         }
       }
       .btnBox {

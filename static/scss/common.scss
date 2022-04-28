@@ -181,3 +181,33 @@
   align-items: center;
   justify-content: flex-start;
 }
+.m-billItem {
+  padding-right: 5px;
+  margin-top: 5px;
+  box-shadow: 0 0 5px #f9f7f7;
+}
+.billItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: normal;
+  font-size: 16px;
+  margin: 5px 0;
+  image {
+    width: 40px;
+    margin: 5px;
+  }
+  .bITitle {
+    flex: 1;
+    text {
+      display: block;
+    }
+    text:nth-child(1) {
+      font-weight: bold;
+    }
+  }
+  .bIMoney {
+    text-align: right;
+    width: 80px;
+  }
+}

@@ -32,6 +32,23 @@
       <view class="r-textBox">
         <text>{{ record.recordText }}</text>
       </view>
+
+      <view v-if="billList.length" class="m-billItem billItem">
+        <image
+          mode="widthFix"
+          :src="`../../static/img/icon/${billList[0].iconUrl}`"
+        ></image>
+        <view class="bITitle">
+          <template v-if="billList[0].remark !== ''">
+            <text>{{ billList[0].title }}</text>
+            <text class="b-mITsubtilte">{{ billList[0].remark }}</text>
+          </template>
+          <text v-else>{{ billList[0].title }}</text>
+        </view>
+        <text class="bIMoney">{{
+          billList[0].type === 0 ? billList[0].money : billList[0].money
+        }}</text>
+      </view>
     </view>
 
     <view class="r-iconBox">
@@ -195,6 +212,7 @@ export default {
       userName: '',
       commentList: [],
       replyList: [],
+      billList: [],
       ownUserName: '',
       baseUrl: `${BASE_URL}/static/`,
       type: '',
@@ -241,6 +259,7 @@ export default {
           _this.record = v.data.recordInfo
           _this.userName = v.data.userName
           _this.userImage = v.data.userImage
+          _this.billList = v.data.bill
           if (_this.type === 'own') {
             _this.getColAndFavCount(v.data.recordId)
           }

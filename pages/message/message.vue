@@ -43,10 +43,9 @@
                   n.dateTime | formatTime
                 }}</text>
                 <!-- 需要使用 uni-icons 请自行引入 -->
-                <uni-icons :type="icons[i]" color="#999" size="18"></uni-icons>
+                <uni-icons :type="icons[i]" color="#7950ea" size="18"></uni-icons>
               </view>
             </uni-list-chat>
-            <!-- <view class="tapBtn">删除</view> -->
           </view>
         </template>
       </uni-collapse-item>
@@ -61,8 +60,8 @@ export default {
   data() {
     return {
       baseUrl: `${BASE_URL}/static/`,
-      title: ['好友申请', '评论', '点赞', '收藏'],
-      icons: ['', 'chatboxes-filled', 'hand-up-filled', 'star-filled'],
+      title: ['好友申请', '评论', '点赞', '收藏', '动态'],
+      icons: ['', 'chatboxes-filled', 'hand-up-filled', 'star-filled', 'notification'],
       accordionVal: '1',
       notHandlelength: 0,
       value: [],
