@@ -477,10 +477,10 @@ export default {
             favoriteTime: fchange && value === '1' ? time : f.favoriteTime,
           },
         }).then((v) => {
-          this.comFunction(v, value, fchange, cchange)
+          this.comFunction(v, value, fchange, cchange, f.recordId)
           if (fchange && value === '0') {
             data = {
-              userId: _this.userId,
+              userId: this.userId,
               useredId: f.userId,
               recordId: f.recordId,
               favorite: '1',
@@ -492,7 +492,7 @@ export default {
             })
           } else if (cchange && value === '0') {
             data = {
-              userId: _this.userId,
+              userId: this.userId,
               useredId: f.userId,
               recordId: f.recordId,
               collect: '1',
@@ -510,7 +510,7 @@ export default {
               noticeCotent: '点赞',
               favorite: '1',
               recordId: f.recordId,
-              userId: _this.userId,
+              userId: this.userId,
             }
             request({
               url: '/addNotice',
@@ -549,7 +549,7 @@ export default {
             userId: _this.userId,
           },
         }).then((v) => {
-          this.comFunction(v, value, fchange, cchange)
+          this.comFunction(v, value, fchange, cchange, f.recordId)
           if (fchange && value === '1') {
             data = {
               type: '3',
@@ -579,14 +579,15 @@ export default {
         })
       }
     },
-    comFunction(v, value, fchange, cchange) {
+    comFunction(v, value, fchange, cchange, recordId) {
+      console.log(v)
       if (v.statusCode === 200) {
         if (fchange) {
           commonWays.toast(value === '0' ? '取消点赞' : '点赞成功')
         } else if (cchange) {
           commonWays.toast(value === '0' ? '取消收藏' : '收藏成功')
         }
-        this.getRecord()
+        this.getRecord(recordId)
       } else {
         commonWays.toast('操作失败')
       }

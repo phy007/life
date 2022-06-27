@@ -349,10 +349,10 @@ import { commonWays } from '../../utils/common'
 import { request, BASE_URL } from '../../utils/request'
 export default {
   data() {
+    this.userId = getApp().globalData.$userId || get_userId()
     return {
       baseUrl: `${BASE_URL}/static/`,
       items: ['我的', '好友'],
-      userId: getApp().globalData.$userId || get_userId(),
       current: 0,
       ownUserName: '',
       ownList: [],

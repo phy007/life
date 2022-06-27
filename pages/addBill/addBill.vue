@@ -151,10 +151,11 @@ export default {
   },
   onLoad: function () {
     const _this = this
+    let eventChannel
     // #ifdef APP-NVUE
-    const eventChannel = _this.$scope.eventChannel || '' // 兼容APP-NVUE
+    eventChannel = _this.$scope.eventChannel || '' // 兼容APP-NVUE
     // #endif
-    const eventChannel = _this.getOpenerEventChannel() || ''
+    eventChannel = _this.getOpenerEventChannel() || ''
     if (eventChannel) {
       eventChannel.once('toBillPageData', function (data) {
         _this.billId = data.billId
